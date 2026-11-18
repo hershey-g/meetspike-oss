@@ -40,6 +40,8 @@ jobs:
 
   deploy:
     needs: test
+    # Skipped in the public template repo itself; runs in your copy once its secrets are set.
+    if: github.repository != 'hershey-g/meetspike-oss'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
