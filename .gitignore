@@ -1,0 +1,22 @@
+node_modules/
+dist/
+.wrangler/
+# Real account ids live here. Written by `npm run setup`, never committed.
+wrangler.production.jsonc
+.dev.vars
+.env
+.env.*
+!.env.example
+!.dev.vars.example
+*.log
+.DS_Store
+.playwright-mcp/
+*.pem
+*.p12
+*.key
+credentials.json
+*-credentials.json
+*-service-account*.json
+service-account*.json
+*serviceaccount*.json
+.mf/

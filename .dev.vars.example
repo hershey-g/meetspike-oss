@@ -1,0 +1,40 @@
+# Copy to .dev.vars (gitignored). Never commit secrets.
+# The "Deploy to Cloudflare" button also reads this file to know which
+# secrets to ask for. Leave the wearable you do not use empty.
+
+# Which wearable feeds the dashboard: whoop or oura.
+WEARABLE=whoop
+
+# WHOOP developer app: https://developer-dashboard.whoop.com/apps/create
+# Redirect URL to register: <your Worker address>/api/whoop/callback
+WHOOP_CLIENT_ID=
+WHOOP_CLIENT_SECRET=
+
+# Oura application: https://cloud.ouraring.com/oauth/applications
+# Redirect URL to register: <your Worker address>/auth/oura/callback
+OURA_CLIENT_ID=
+OURA_CLIENT_SECRET=
+
+# Google Cloud OAuth client (Web application), scope calendar.readonly.
+# Redirect URL to register: <your Worker address>/auth/google/callback
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+
+# Optional. Redirect addresses default to this Worker's own address
+# (http://localhost:8787 under `wrangler dev`). Set these only to override.
+# WHOOP_REDIRECT_URI=
+# OURA_REDIRECT_URI=
+# GOOGLE_REDIRECT_URI=
+
+# Optional. Oura only: true reads Oura's sandbox data instead of your own.
+# OURA_SANDBOX=true
+
+# Optional. Default UI title is Meetspike.
+# DISPLAY_TITLE=Meetspike
+
+# Admin ingest for POST /api/plaud/ingest. Not a Plaud token.
+# INGEST_ADMIN_SECRET=
+
+# Optional. Turns on "Ask your data": 32+ random characters used to encrypt
+# your own Claude API key at rest. The key itself is pasted in the app.
+# AI_KEY_SECRET=

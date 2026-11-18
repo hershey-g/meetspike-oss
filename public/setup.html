@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#15191e" />
+    <meta name="color-scheme" content="dark" />
+    <link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials" />
+    <link rel="icon" href="/favicon.ico?v=1" sizes="32x32" />
+    <link rel="icon" href="/icons/icon.svg?v=1" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=1" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Meetspike" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>Set up Meetspike</title>
+    <link rel="stylesheet" href="/app.css" />
+    <link rel="stylesheet" href="/setup.css" />
+  </head>
+  <body class="setup">
+    <header class="mast">
+      <p class="eyebrow">First-time setup</p>
+      <h1>Set up Meetspike</h1>
+      <p class="baseline">
+        About 15 minutes. You will connect a wearable and your Google Calendar. Nothing here is shared with anyone:
+        the data stays in your own Cloudflare account.
+      </p>
+    </header>
+
+    <main id="main">
+      <p class="error" id="setup-error" hidden></p>
+
+      <section class="step" id="step-wearable">
+        <h2><span class="num">1</span> Which wearable do you use?</h2>
+        <div class="choice" role="radiogroup" aria-label="Wearable">
+          <label><input type="radio" name="wearable" value="whoop" /> WHOOP</label>
+          <label><input type="radio" name="wearable" value="oura" /> Oura ring</label>
+        </div>
+        <p class="stat" id="wearable-current"></p>
+        <div class="how" id="wearable-switch" hidden>
+          <p>
+            This install is set to <strong id="wearable-active"></strong>. To use
+            <strong id="wearable-wanted"></strong> instead, change one setting:
+          </p>
+          <ol>
+            <li>Open <a href="https://dash.cloudflare.com/?to=/:account/workers-and-pages" target="_blank" rel="noopener">Cloudflare → Workers &amp; Pages</a> and click this Worker.</li>
+            <li>Go to <strong>Settings</strong> → <strong>Variables and Secrets</strong> → <strong>Add</strong>.</li>
+            <li>Type: <strong>Secret</strong>. Name: <code>WEARABLE</code>. Value: <code id="wearable-value"></code>. Click <strong>Deploy</strong>.</li>
+            <li>Come back here and press <strong>Check again</strong>.</li>
+          </ol>
+          <p class="method">
+            Prefer a terminal? <code>npx wrangler secret put WEARABLE</code>, then type <code id="wearable-value-2"></code>.
+            If you ran <code>npm run setup</code>, you can instead change <code>WEARABLE</code> in
+            <code>wrangler.production.jsonc</code> and deploy again.
+          </p>
+        </div>
+        <p class="method" id="wearable-why"></p>
+      </section>
+
+      <section class="step" id="step-app">
+        <h2><span class="num">2</span> Create your <span data-w="label"></span> developer app</h2>
+        <p>
+          <span data-w="label"></span> only hands data to an app you have registered yourself. It is free and takes a couple of minutes.
+        </p>
+        <ol>
+          <li>Open <a id="app-url" href="#" target="_blank" rel="noopener"></a> and sign in with your <span data-w="label"></span> account.</li>
+          <li>Create a new app. The name can be anything, for example “Meetspike”.</li>
+          <li>
+            Where it asks for a <strong>redirect URL</strong> (also called a redirect URI), paste exactly this:
+            <span class="copy-row"><code id="app-redirect"></code> <button type="button" class="btn light" data-copy="app-redirect">Copy</button></span>
+          </li>
+          <li id="app-scopes-row">Tick these permissions (scopes): <code id="app-scopes"></code></li>
+          <li>Save. The page will show a <strong>Client ID</strong> and a <strong>Client Secret</strong>. Keep that tab open for the next step.</li>
+        </ol>
+      </section>
+
+      <section class="step" id="step-keys">
+        <h2><span class="num">3</span> Give the two keys to your Worker</h2>
+        <p>
+          For your safety this page cannot store the keys itself: a Cloudflare Worker is not able to set its own secrets.
+          You paste them straight into Cloudflare, where they are encrypted.
+        </p>
+        <ol>
+          <li>Open <a href="https://dash.cloudflare.com/?to=/:account/workers-and-pages" target="_blank" rel="noopener">Cloudflare → Workers &amp; Pages</a> and click this Worker.</li>
+          <li>Go to <strong>Settings</strong> → <strong>Variables and Secrets</strong> → <strong>Add</strong>.</li>
+          <li>Type: <strong>Secret</strong>. Add these two, one at a time, pasting the value from the developer app:</li>
+        </ol>
+        <ul class="keys" id="wearable-keys"></ul>
+        <p class="method">
+          Prefer a terminal? In the project folder run each command and paste the value when asked:
+        </p>
+        <pre id="wearable-commands"></pre>
+        <p><button type="button" class="btn light" data-action="recheck">Check again</button></p>
+      </section>
+
+      <section class="step" id="step-connect">
+        <h2><span class="num">4</span> Connect <span data-w="label"></span></h2>
+        <p id="connect-state"></p>
+        <p><a class="btn light" id="connect-wearable" href="#">Connect</a></p>
+      </section>
+
+      <section class="step" id="step-google">
+        <h2><span class="num">5</span> Connect Google Calendar</h2>
+        <p>Meetspike only reads your calendar. It cannot change or create events.</p>
+        <ol>
+          <li>Open <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">Google Cloud → Credentials</a>. Create a project if it asks you to.</li>
+          <li>Turn on the calendar: open <a href="https://console.cloud.google.com/apis/library/calendar-json.googleapis.com" target="_blank" rel="noopener">Google Calendar API</a> and press <strong>Enable</strong>.</li>
+          <li>Back on Credentials: <strong>Create credentials</strong> → <strong>OAuth client ID</strong> → Application type <strong>Web application</strong>. If Google first asks you to set up a consent screen, choose “External” and add your own email as a test user.</li>
+          <li>
+            Under <strong>Authorized redirect URIs</strong> add exactly this:
+            <span class="copy-row"><code id="google-redirect"></code> <button type="button" class="btn light" data-copy="google-redirect">Copy</button></span>
+          </li>
+          <li>Create. Add the Client ID and Client Secret to your Worker the same way as in step 3:</li>
+        </ol>
+        <ul class="keys" id="google-keys"></ul>
+        <pre id="google-commands"></pre>
+        <p id="google-state"></p>
+        <p>
+          <a class="btn light" id="connect-google" href="/auth/google/start">Connect Google Calendar</a>
+          <button type="button" class="btn ghost" data-action="recheck">Check again</button>
+        </p>
+      </section>
+
+      <section class="step" id="step-data">
+        <h2><span class="num">6</span> Bring in your data</h2>
+        <p>Once both are connected, pull in the last 30 days. After that it refreshes itself every night.</p>
+        <p>
+          <button type="button" class="btn light" data-action="import">Import my last 30 days</button>
+          <button type="button" class="btn ghost" data-action="sample">Try it with sample data first</button>
+        </p>
+        <p class="stat" id="data-state" role="status"></p>
+        <p><a class="btn light" href="/">Open Meetspike</a></p>
+      </section>
+
+      <section class="step" id="step-lock">
+        <h2><span class="num">7</span> Lock the door</h2>
+        <p>
+          Until you do this, anyone who knows this address can open your dashboard. Cloudflare Access puts a sign-in
+          in front of it, and it is free for personal use.
+        </p>
+        <ol>
+          <li>Open <a href="https://one.dash.cloudflare.com/" target="_blank" rel="noopener">Cloudflare Zero Trust</a> → <strong>Access</strong> → <strong>Applications</strong> → <strong>Add an application</strong> → <strong>Self-hosted</strong>.</li>
+          <li>Address: <code id="lock-origin"></code>. Add a rule that allows only your own email address.</li>
+          <li>
+            Add a second application for each of these addresses with the rule <strong>Bypass → Everyone</strong>, so the
+            sign-in pages can send you back:
+            <code id="lock-bypass"></code>
+          </li>
+          <li>
+            Optional, so the app can be added to a phone's home screen: bypass these too. They are the app icon and
+            name, with none of your data:
+            <code id="lock-public"></code>
+          </li>
+        </ol>
+        <p class="method">The README has the same steps with more detail.</p>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <p><a class="text-btn" href="/">Back to Meetspike</a></p>
+    </footer>
+
+    <script type="module" src="/setup.js"></script>
+  </body>
+</html>

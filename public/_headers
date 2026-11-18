@@ -1,0 +1,49 @@
+# Cache rules for the static app in this folder (Workers static assets).
+#
+# App code and pages: "no-cache" means the browser may keep a copy but must
+# ask the server before using it (a cheap ETag check), so a refresh always
+# loads the newest deploy. Do not change these back to max-age or
+# stale-while-revalidate: that is what made a refresh show the old app.
+#
+# Icons never change in place. When the design changes, bump ?v= in
+# index.html, setup.html and manifest.webmanifest, so they can be cached long.
+#
+# Do not add a "/*" rule: Cloudflare applies every matching rule, and two
+# Cache-Control values on one response conflict.
+
+/
+  Cache-Control: no-cache
+
+/index.html
+  Cache-Control: no-cache
+
+/setup
+  Cache-Control: no-cache
+
+/setup.html
+  Cache-Control: no-cache
+
+/setup.js
+  Cache-Control: no-cache
+
+/setup.css
+  Cache-Control: no-cache
+
+/app.js
+  Cache-Control: no-cache
+
+/app.css
+  Cache-Control: no-cache
+
+/range-presets.js
+  Cache-Control: no-cache
+
+/manifest.webmanifest
+  Cache-Control: no-cache
+  Content-Type: application/manifest+json
+
+/icons/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/favicon.ico
+  Cache-Control: public, max-age=86400

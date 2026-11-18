@@ -1,0 +1,65 @@
+name: Deploy
+
+# Tests, then deploy the Worker, on every push to main.
+#
+# Repository secrets this needs (Settings → Secrets and variables → Actions):
+#   CLOUDFLARE_API_TOKEN        scoped token that can edit this Worker
+#   CLOUDFLARE_ACCOUNT_ID       the account the Worker lives in
+#   WRANGLER_PRODUCTION_CONFIG  the full text of wrangler.production.jsonc
+#
+# The production config holds real resource ids. It is written to disk for
+# this run only and is never committed (git ignores the file).
+#
+# This does not apply database migrations. Run those yourself when a release
+# adds one:  npx wrangler d1 migrations apply <db name> --remote -c wrangler.production.jsonc
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Write production config
+        env:
+          WRANGLER_PRODUCTION_CONFIG: ${{ secrets.WRANGLER_PRODUCTION_CONFIG }}
+        run: |
+          if [ -z "$WRANGLER_PRODUCTION_CONFIG" ]; then
+            echo "::error::The WRANGLER_PRODUCTION_CONFIG secret is empty. Add the full production wrangler config as a repository secret."
+            exit 1
+          fi
+          printf '%s' "$WRANGLER_PRODUCTION_CONFIG" > wrangler.production.jsonc
+      - name: Deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler deploy -c wrangler.production.jsonc

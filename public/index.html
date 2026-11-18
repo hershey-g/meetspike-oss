@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#15191e" />
+    <meta name="color-scheme" content="dark" />
+    <link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials" />
+    <link rel="icon" href="/favicon.ico?v=1" sizes="32x32" />
+    <link rel="icon" href="/icons/icon.svg?v=1" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=1" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Meetspike" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>Meetspike</title>
+    <meta name="description" content="Your meetings next to your recovery, sleep and strain." />
+    <link rel="stylesheet" href="/app.css" />
+    <link rel="modulepreload" href="/app.js" />
+    <link rel="modulepreload" href="/range-presets.js" />
+  </head>
+  <body>
+    <a class="skip" href="#screen">Skip to content</a>
+    <div id="access" class="notice" hidden role="alert">
+      Your sign-in expired.
+      <button type="button" class="link" data-action="reload">Sign in again</button>
+    </div>
+    <main id="screen" class="screen" tabindex="-1" aria-live="polite">
+      <p class="placeholder">Loading…</p>
+    </main>
+    <nav class="tabbar" aria-label="Main">
+      <div class="tabs">
+        <a href="#today" data-tab="today">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 9.5 10 4l7 5.5V17H3z" /></svg>Today
+        </a>
+        <a href="#dates" data-tab="dates">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="4" width="14" height="13" rx="2" /><path d="M3 8h14M7 2.5v3M13 2.5v3" /></svg>Dates
+        </a>
+        <a href="#people" data-tab="people">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="7" cy="7" r="3" /><circle cx="14" cy="8" r="2.5" /><path d="M2 17c0-3 2.5-5 5-5s5 2 5 5M12 13c3 0 6 1.5 6 4" /></svg>People
+        </a>
+        <a href="#more" data-tab="more">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 6h14M3 10h14M3 14h14" /></svg>More<span class="dot" id="more-dot" hidden></span>
+        </a>
+      </div>
+      <a href="#ask" class="ask-fab" data-tab="ask" aria-label="Ask your data">
+        <svg viewBox="0 0 26 26" aria-hidden="true"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h13A2.5 2.5 0 0 1 22 6.5v9a2.5 2.5 0 0 1-2.5 2.5H11l-5 4v-4H6.5A2.5 2.5 0 0 1 4 15.5z" /><path d="M9 11h8" /></svg>
+      </a>
+    </nav>
+    <div id="sheet" class="sheet" hidden></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

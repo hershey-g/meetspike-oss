@@ -1,0 +1,52 @@
+{
+  "name": "meetspike",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "setup": "node scripts/setup.mjs",
+    "db:migrations:apply": "wrangler d1 migrations apply DB --remote",
+    "deploy": "npm run db:migrations:apply && wrangler deploy",
+    "deploy:production": "wrangler deploy -c wrangler.production.jsonc",
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test test/**/*.test.ts",
+    "types": "wrangler types",
+    "icons": "node scripts/build-icons.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.10.0",
+    "hono": "^4.9.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "latest",
+    "@resvg/resvg-js": "^2.6.2",
+    "typescript": "^5.7.0",
+    "wrangler": "^4.20.0"
+  },
+  "cloudflare": {
+    "label": "Meetspike",
+    "bindings": {
+      "WEARABLE": {
+        "description": "Which wearable you use: `whoop` or `oura`."
+      },
+      "WHOOP_CLIENT_ID": {
+        "description": "From your WHOOP developer app ([create one](https://developer-dashboard.whoop.com/apps/create)). Leave empty if you use Oura. You can also add it later — the `/setup` page shows how."
+      },
+      "WHOOP_CLIENT_SECRET": {
+        "description": "From the same WHOOP developer app. Leave empty if you use Oura."
+      },
+      "OURA_CLIENT_ID": {
+        "description": "From your Oura application ([create one](https://cloud.ouraring.com/oauth/applications)). Leave empty if you use WHOOP."
+      },
+      "OURA_CLIENT_SECRET": {
+        "description": "From the same Oura application. Leave empty if you use WHOOP."
+      },
+      "GOOGLE_CLIENT_ID": {
+        "description": "From a Google Cloud OAuth client of type Web application. You can add it later — the `/setup` page shows how."
+      },
+      "GOOGLE_CLIENT_SECRET": {
+        "description": "From the same Google Cloud OAuth client."
+      }
+    }
+  }
+}
