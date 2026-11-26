@@ -28,7 +28,7 @@ describe("classifyTitle", () => {
   it("maps title heuristics to work kinds", () => {
     assert.equal(classifyTitle("Hold for deep work"), "deep_work");
     assert.equal(classifyTitle("Weekly staff"), "internal");
-    assert.equal(classifyTitle("Sam 1:1"), "internal");
+    assert.equal(classifyTitle("Olive 1:1"), "internal");
     assert.equal(classifyTitle("Dentist"), "personal");
     assert.equal(classifyTitle("Invoice / bookkeep"), "admin");
     assert.equal(classifyTitle("Client pitch — Acme"), "client");

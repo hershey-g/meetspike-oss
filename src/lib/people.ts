@@ -143,6 +143,7 @@ export function summarizePerson(
   let watching = 0;
   let restored = 0;
   let missingHr = 0;
+  let combined = 0;
   const avgs: number[] = [];
   for (const row of rows) {
     const hr = row.hrStress;
@@ -156,18 +157,20 @@ export function summarizePerson(
     }
     if (hr.zone === "high") elevated += 1;
     else if (hr.zone === "moderate") watching += 1;
-    else restored += 1;
+    else if (hr.zone === "low") restored += 1;
+    else combined += 1;
   }
-  const withCoverage = elevated + watching + restored;
+  const scored = elevated + watching + restored;
+  const withCoverage = scored + combined;
   let badge: PersonBadge | null = null;
   let badgeNote = "Need at least two meetings with ring heart-rate before a person pattern is honest.";
-  if (withCoverage >= 2) {
-    if (elevated >= 2 && elevated / withCoverage >= 0.5) {
+  if (scored >= 2) {
+    if (elevated >= 2 && elevated / scored >= 0.5) {
       badge = "often spikes you";
-      badgeNote = `${elevated} of ${withCoverage} meetings with ring data landed Elevated.`;
-    } else if (restored / withCoverage >= 2 / 3 && elevated === 0) {
+      badgeNote = `${elevated} of ${scored} meetings with heart-rate scores landed Elevated.`;
+    } else if (restored / scored >= 2 / 3 && elevated === 0) {
       badge = "usually restored";
-      badgeNote = `${restored} of ${withCoverage} meetings with ring data stayed Restored.`;
+      badgeNote = `${restored} of ${scored} meetings with heart-rate scores stayed Restored.`;
     } else {
       badge = "mixed";
       badgeNote = `${elevated} Elevated, ${watching} Worth watching, ${restored} Restored — with ring data only.`;

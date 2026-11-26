@@ -1,0 +1,54 @@
+{
+  "ok": true,
+  "start": "2026-10-28",
+  "end": "2026-11-24",
+  "spanDays": 28,
+  "wearable": {
+    "source": "whoop",
+    "label": "WHOOP",
+    "hasIntradayHr": true,
+    "hrSource": "whoop_web",
+    "ouraHr": false,
+    "whoopWebHr": true,
+    "readinessLabel": "Recovery",
+    "strainLabel": "Strain",
+    "strainMax": 21,
+    "tagline": "Calendar × WHOOP heart rate and recovery",
+    "note": "Heart rate during the meeting is your WHOOP strap's, minute by minute."
+  },
+  "sourceDisplay": {
+    "oura": true,
+    "whoop": true
+  },
+  "people": [
+    {
+      "email": "dana.sample@example.com",
+      "name": "Dana Sample",
+      "meetings": 9,
+      "days": 7,
+      "avg": 58
+    },
+    {
+      "email": "casey.example@example.com",
+      "name": "Casey Example",
+      "meetings": 6,
+      "days": 6,
+      "avg": 71
+    },
+    {
+      "email": "sam.placeholder@example.com",
+      "name": "Sam Placeholder",
+      "meetings": 4,
+      "days": 3,
+      "avg": null
+    },
+    {
+      "email": "jordan.fixture@example.com",
+      "name": null,
+      "meetings": 2,
+      "days": 2,
+      "avg": 49
+    }
+  ],
+  "usualRecovery": 68
+}

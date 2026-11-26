@@ -43,8 +43,8 @@ describe("projectPlaudRecording", () => {
   it("projects a Phone Call window and ignores transcript fields", () => {
     const result = projectPlaudRecording(
       {
-        plaud_file_id: "of_00000000000000000000000000000001",
-        title: "Phone Call: Schedule delay for Thursday meeting",
+        plaud_file_id: "of_8aa402f855b24e97a7dc74bc555d447a",
+        title: "Phone Call: Schedule Delay for Meeting with Chaim",
         start_at: "2026-09-16T14:18:50",
         duration_ms: 66000,
         has_transcript: true,
@@ -56,7 +56,7 @@ describe("projectPlaudRecording", () => {
     if (result.status !== "accept") throw new Error("expected accept");
     assert.equal(result.row.source, "plaud");
     assert.equal(result.row.source_type, "plaud_phone");
-    assert.equal(result.row.plaud_file_id, "of_00000000000000000000000000000001");
+    assert.equal(result.row.plaud_file_id, "of_8aa402f855b24e97a7dc74bc555d447a");
     assert.equal(result.row.has_transcript, 1);
     assert.equal(result.row.day, "2026-09-16");
     assert.equal(result.row.duration_s, 66);

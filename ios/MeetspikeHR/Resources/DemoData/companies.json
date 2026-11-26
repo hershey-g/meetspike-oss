@@ -1,0 +1,126 @@
+{
+  "ok": true,
+  "start": "2026-10-28",
+  "end": "2026-11-24",
+  "spanDays": 28,
+  "wearable": {
+    "source": "whoop",
+    "label": "WHOOP",
+    "hasIntradayHr": true,
+    "hrSource": "whoop_web",
+    "ouraHr": false,
+    "whoopWebHr": true,
+    "readinessLabel": "Recovery",
+    "strainLabel": "Strain",
+    "strainMax": 21,
+    "tagline": "Calendar × WHOOP heart rate and recovery",
+    "note": "Heart rate during the meeting is your WHOOP strap's, minute by minute."
+  },
+  "sourceDisplay": {
+    "oura": true,
+    "whoop": true
+  },
+  "companies": [
+    {
+      "domain": "northwind.example",
+      "name": "Northwind",
+      "meetings": 11,
+      "people": 3,
+      "days": 8,
+      "avg": 57,
+      "trend": {
+        "meetingCount": 11,
+        "withCoverage": 9,
+        "elevated": 5,
+        "watching": 3,
+        "restored": 1,
+        "missingHr": 2,
+        "medianAvgBpm": 84,
+        "spark": [
+          91,
+          79,
+          88,
+          74,
+          85,
+          80,
+          90,
+          77,
+          86
+        ],
+        "badge": "often spikes you",
+        "badgeNote": "5 of 9 meetings with heart-rate scores landed Elevated."
+      }
+    },
+    {
+      "domain": "globex.example",
+      "name": "Globex",
+      "meetings": 6,
+      "people": 2,
+      "days": 5,
+      "avg": 72,
+      "trend": {
+        "meetingCount": 6,
+        "withCoverage": 5,
+        "elevated": 0,
+        "watching": 1,
+        "restored": 4,
+        "missingHr": 1,
+        "medianAvgBpm": 71,
+        "spark": [
+          70,
+          72,
+          69,
+          74,
+          71
+        ],
+        "badge": "usually restored",
+        "badgeNote": "4 of 5 meetings with heart-rate scores stayed Restored."
+      }
+    },
+    {
+      "domain": "initech.example",
+      "name": "Initech",
+      "meetings": 4,
+      "people": 2,
+      "days": 3,
+      "avg": null,
+      "trend": {
+        "meetingCount": 4,
+        "withCoverage": 3,
+        "elevated": 1,
+        "watching": 1,
+        "restored": 1,
+        "missingHr": 1,
+        "medianAvgBpm": 80,
+        "spark": [
+          84,
+          78,
+          80
+        ],
+        "badge": "mixed",
+        "badgeNote": "1 Elevated, 1 Worth watching, 1 Restored, with ring data only."
+      }
+    },
+    {
+      "domain": "umbrella-health.example",
+      "name": "Umbrella Health",
+      "meetings": 2,
+      "people": 1,
+      "days": 2,
+      "avg": 49,
+      "trend": {
+        "meetingCount": 2,
+        "withCoverage": 0,
+        "elevated": 0,
+        "watching": 0,
+        "restored": 0,
+        "missingHr": 2,
+        "medianAvgBpm": null,
+        "spark": [],
+        "badge": null,
+        "badgeNote": "Need at least two meetings with ring heart-rate before a company pattern is honest."
+      }
+    }
+  ],
+  "usualRecovery": 68
+}

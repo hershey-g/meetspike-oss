@@ -1,0 +1,15 @@
+{
+  "calendar": {
+    "ok": false,
+    "needsGoogle": true,
+    "error": "Google Calendar is not connected"
+  },
+  "whoop": {
+    "ok": true
+  },
+  "oura": {
+    "ok": false,
+    "error": "Oura answered HTTP 500"
+  },
+  "syncedAt": "2026-11-24T14:10:00.000Z"
+}

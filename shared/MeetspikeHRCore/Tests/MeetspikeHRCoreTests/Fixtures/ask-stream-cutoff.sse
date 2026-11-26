@@ -1,0 +1,6 @@
+event: step
+data: {"id": "write", "label": "Writing the answer", "status": "active"}
+
+event: text
+data: {"delta": "Your busiest day was Nov 12, with"}
+

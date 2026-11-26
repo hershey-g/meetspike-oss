@@ -1,3 +1,5 @@
+import type { ResolvedOverride } from "./lib/meeting-override.ts";
+
 export const SOURCE_OURA = "oura" as const;
 export const SOURCE_WHOOP = "whoop" as const;
 /** A wearable that writes daily / sleep / workout rows. Every such row carries its source. */
@@ -241,6 +243,8 @@ export type CalendarEventRow = {
   sync_reason?: string | null;
   has_transcript?: number | null;
   synced_at?: string | null;
+  /** The owner's choices for this meeting (src/lib/meeting-override.ts), set by the loaders. Not a column. */
+  override?: ResolvedOverride;
 };
 
 export type Projected =

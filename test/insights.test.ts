@@ -57,7 +57,8 @@ describe("median and window", () => {
   it("clamps the insights window", () => {
     assert.equal(parseInsightsDays(undefined), 28);
     assert.equal(parseInsightsDays("3"), 7);
-    assert.equal(parseInsightsDays("90"), 60);
+    assert.equal(parseInsightsDays("90"), 90);
+    assert.equal(parseInsightsDays("730"), 730);
   });
 });
 

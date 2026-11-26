@@ -87,8 +87,8 @@ describe("usual numbers", () => {
     ]);
     const events = [
       // 9 pm Monday in New York is 02:00 UTC Tuesday: still Monday's meeting.
-      event("late", "2026-11-17T02:00:00.000Z", 60, [["sam@x.example", "Sam"]]),
-      event("am", "2026-11-16T14:00:00.000Z", 30, [["sam@x.example", null], ["me@x.example", "Me"]]),
+      event("late", "2026-11-17T02:00:00.000Z", 60, [["sam@x.com", "Sam"]]),
+      event("am", "2026-11-16T14:00:00.000Z", 30, [["sam@x.com", null], ["me@x.com", "Me"]]),
       event("am", "2026-11-16T14:00:00.000Z", 30),
     ];
     const rows = buildDayRows(events, byDay, "2026-11-15", "2026-11-17", TZ);
@@ -100,7 +100,7 @@ describe("usual numbers", () => {
     assert.equal(mon.next?.readinessScore, 55);
     assert.equal(mon.weekday, true);
     assert.equal(rows[0].weekday, false);
-    const sam = mon.people.find((p) => p.email === "sam@x.example");
+    const sam = mon.people.find((p) => p.email === "sam@x.com");
     assert.equal(sam?.meetings, 2);
     assert.equal(sam?.name, "Sam");
   });
@@ -134,13 +134,13 @@ describe("usual numbers", () => {
   });
 
   it("people on heavy days are ranked by heavy days, then meetings", () => {
-    const sam = { email: "sam@x.example", name: "Sam", meetings: 2 };
-    const dana = { email: "dana@x.example", name: null, meetings: 3 };
+    const sam = { email: "sam@x.com", name: "Sam", meetings: 2 };
+    const dana = { email: "dana@x.com", name: null, meetings: 3 };
     const people = peopleOnHeavyDays([
       row("a", 5, 5, 50, [sam, dana]),
       row("b", 6, 6, 50, [sam]),
       row("c", 1, 1, 80, [dana, dana]),
     ]);
-    assert.deepEqual(people.map((p) => [p.email, p.heavyDays, p.meetings]), [["sam@x.example", 2, 4], ["dana@x.example", 1, 3]]);
+    assert.deepEqual(people.map((p) => [p.email, p.heavyDays, p.meetings]), [["sam@x.com", 2, 4], ["dana@x.com", 1, 3]]);
   });
 });

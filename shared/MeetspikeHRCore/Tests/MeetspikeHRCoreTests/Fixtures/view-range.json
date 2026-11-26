@@ -1,0 +1,2928 @@
+{
+  "ok": true,
+  "today": "2026-11-24",
+  "start": "2026-11-18",
+  "end": "2026-11-24",
+  "spanDays": 7,
+  "timeZone": "America/New_York",
+  "wearable": {
+    "source": "whoop",
+    "label": "WHOOP",
+    "hasIntradayHr": true,
+    "hrSource": "whoop_web",
+    "ouraHr": false,
+    "whoopWebHr": true,
+    "readinessLabel": "Recovery",
+    "strainLabel": "Strain",
+    "strainMax": 21,
+    "tagline": "Calendar × WHOOP heart rate and recovery",
+    "note": "Heart rate during the meeting is your WHOOP strap's, minute by minute."
+  },
+  "status": {
+    "displayTitle": "Meetspike",
+    "sandbox": false,
+    "wearables": [
+      {
+        "source": "whoop",
+        "label": "WHOOP",
+        "displayEnabled": true,
+        "connected": true,
+        "expiresAt": "2026-12-20T00:00:00.000Z",
+        "lastDataDay": "2026-11-24",
+        "lastReceivedAt": "2026-11-24T13:55:00.000Z",
+        "history": {
+          "min": "2026-08-01",
+          "max": "2026-11-24"
+        }
+      },
+      {
+        "source": "oura",
+        "label": "Oura",
+        "displayEnabled": true,
+        "connected": false,
+        "expiresAt": null,
+        "lastDataDay": null,
+        "lastReceivedAt": null,
+        "history": {
+          "min": null,
+          "max": null
+        }
+      }
+    ],
+    "sourceDisplay": {
+      "oura": true,
+      "whoop": true
+    },
+    "wearableConnected": true,
+    "googleConnected": true,
+    "lastSync": {
+      "created_at": "2026-11-24T14:05:00.000Z",
+      "status": "ok"
+    }
+  },
+  "morningScores": [
+    {
+      "source": "whoop",
+      "label": "WHOOP",
+      "readinessLabel": "Recovery",
+      "morning": 72,
+      "nextMorning": null,
+      "average": 72,
+      "usual": {
+        "from": "2026-10-28",
+        "to": "2026-11-24",
+        "days": 28,
+        "recovery": 68,
+        "sleep": 80,
+        "hrv": 62,
+        "restingHr": 54,
+        "strain": 11.2,
+        "meetingHours": 3.5,
+        "afterHours": 0.6
+      }
+    },
+    {
+      "source": "oura",
+      "label": "Oura",
+      "readinessLabel": "Readiness",
+      "morning": 81,
+      "nextMorning": null,
+      "average": 79,
+      "usual": {
+        "from": "2026-10-28",
+        "to": "2026-11-24",
+        "days": 28,
+        "recovery": 77,
+        "sleep": 80,
+        "hrv": 62,
+        "restingHr": 54,
+        "strain": 11.2,
+        "meetingHours": 3.5,
+        "afterHours": 0.6
+      }
+    }
+  ],
+  "day": null,
+  "range": {
+    "ok": true,
+    "start": "2026-11-18",
+    "end": "2026-11-24",
+    "spanDays": 7,
+    "singleDay": false,
+    "timeZone": "America/New_York",
+    "summary": {
+      "elevated": 3,
+      "watching": 5,
+      "restored": 6,
+      "noHr": 4,
+      "meetingCount": 20,
+      "daysWithMeetings": 5,
+      "totalDurationS": 55800,
+      "afterHoursCount": 2,
+      "earlyStartCount": 0,
+      "byKind": {
+        "internal": 16,
+        "client": 4
+      },
+      "meanBpm": 77.2,
+      "hardest": {
+        "id": "m-pipeline",
+        "title": "Pipeline review",
+        "day": "2026-11-20",
+        "startLocal": "2026-11-20T10:30:00-05:00",
+        "headline": "Elevated",
+        "impact": 41.2
+      },
+      "line": "20 meetings over 5 days. Heart rate ran high in 3."
+    },
+    "recovery": {
+      "nSleep": 7,
+      "nReadiness": 6,
+      "avgSleepScore": 80,
+      "avgReadinessScore": 72,
+      "lowSleepDays": 0,
+      "lowReadinessDays": 0,
+      "nStrain": 6,
+      "avgStrain": 10.2
+    },
+    "days": [
+      {
+        "day": "2026-11-18",
+        "meetingCount": 4,
+        "totalDurationS": 10800,
+        "afterHoursCount": 0,
+        "earlyStartCount": 0,
+        "elevated": 1,
+        "watching": 1,
+        "restored": 1,
+        "noHr": 1,
+        "meanBpm": 78.5,
+        "morning": {
+          "sleepScore": 80,
+          "readinessScore": 66,
+          "strain": 10.2
+        },
+        "nextMorning": {
+          "sleepScore": 78,
+          "readinessScore": 71,
+          "strain": null
+        },
+        "meetings": [
+          {
+            "id": "m-standup",
+            "title": "Team standup",
+            "kind": "internal",
+            "day": "2026-11-18",
+            "startUtc": "2026-11-18T14:00:00.000Z",
+            "endUtc": "2026-11-18T14:30:00.000Z",
+            "startLocal": "2026-11-18T09:00:00-05:00",
+            "endLocal": "2026-11-18T09:30:00-05:00",
+            "afterHours": false,
+            "earlyStart": false,
+            "attendeeCount": 3,
+            "durationS": 1800,
+            "ouraMorningDay": "2026-11-18",
+            "signals": {
+              "stressHighS": null,
+              "recoveryHighS": null,
+              "stressSummary": null,
+              "stressSource": "none",
+              "readinessProxy": null,
+              "nextSleepScore": null,
+              "nextReadinessScore": 71,
+              "nextHrv": null,
+              "nextLowestHr": null,
+              "nextTotalSleepS": null
+            },
+            "score": 0.4,
+            "flags": [],
+            "hrStress": {
+              "coverage": "ok",
+              "source": "WHOOP",
+              "gaps": [],
+              "method": "heartrate_proxy",
+              "methodNote": "WHOOP heart rate inside the meeting window.",
+              "sampleCount": 30,
+              "meanBpm": 68,
+              "maxBpm": 74,
+              "dayAwakeMeanBpm": 72,
+              "restingBpm": 55,
+              "elevatedThresholdBpm": 80,
+              "elevatedPct": 4,
+              "elevatedMinutes": 1,
+              "meanVsAwake": -4,
+              "zone": "low",
+              "headline": "Restored",
+              "story": "Restored: heart rate averaged 68 bpm.",
+              "impact": 1.0,
+              "series": [
+                {
+                  "t": "2026-11-18T14:00:00.000Z",
+                  "bpm": 67.0,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-18T14:03:00.000Z",
+                  "bpm": 69.6,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-18T14:05:00.000Z",
+                  "bpm": 71.8,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-18T14:08:00.000Z",
+                  "bpm": 70.5,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-18T14:11:00.000Z",
+                  "bpm": 71.5,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-18T14:14:00.000Z",
+                  "bpm": 71.7,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-18T14:16:00.000Z",
+                  "bpm": 68.4,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-18T14:19:00.000Z",
+                  "bpm": 67.9,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-18T14:22:00.000Z",
+                  "bpm": 67.3,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-18T14:25:00.000Z",
+                  "bpm": 64.1,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-18T14:27:00.000Z",
+                  "bpm": 64.5,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-18T14:30:00.000Z",
+                  "bpm": 65.5,
+                  "minutes": 1
+                }
+              ],
+              "partial": null
+            },
+            "attendees": [
+              {
+                "email": "me@example.com",
+                "self": true,
+                "name": "Me Example"
+              },
+              {
+                "email": "casey.example@example.com",
+                "self": false,
+                "name": "Casey Example"
+              },
+              {
+                "email": "sam.placeholder@example.com",
+                "self": false,
+                "name": "Sam Placeholder"
+              }
+            ],
+            "attendeeNote": null,
+            "sourceType": "calendar",
+            "syncReason": null,
+            "hasTranscript": false
+          },
+          {
+            "id": "m-pipeline",
+            "title": "Pipeline review",
+            "kind": "client",
+            "day": "2026-11-18",
+            "startUtc": "2026-11-18T15:30:00.000Z",
+            "endUtc": "2026-11-18T16:30:00.000Z",
+            "startLocal": "2026-11-18T10:30:00-05:00",
+            "endLocal": "2026-11-18T11:30:00-05:00",
+            "afterHours": false,
+            "earlyStart": false,
+            "attendeeCount": 3,
+            "durationS": 3600,
+            "ouraMorningDay": "2026-11-18",
+            "signals": {
+              "stressHighS": null,
+              "recoveryHighS": null,
+              "stressSummary": null,
+              "stressSource": "none",
+              "readinessProxy": null,
+              "nextSleepScore": null,
+              "nextReadinessScore": 71,
+              "nextHrv": null,
+              "nextLowestHr": null,
+              "nextTotalSleepS": null
+            },
+            "score": 0.4,
+            "flags": [],
+            "hrStress": {
+              "coverage": "ok",
+              "source": "WHOOP",
+              "gaps": [],
+              "method": "heartrate_proxy",
+              "methodNote": "WHOOP heart rate inside the meeting window.",
+              "sampleCount": 48,
+              "meanBpm": 91,
+              "maxBpm": 112,
+              "dayAwakeMeanBpm": 72,
+              "restingBpm": 55,
+              "elevatedThresholdBpm": 80,
+              "elevatedPct": 62,
+              "elevatedMinutes": 37,
+              "meanVsAwake": 19,
+              "zone": "high",
+              "headline": "Elevated",
+              "story": "Elevated: heart rate averaged 91 bpm.",
+              "impact": 41.2,
+              "series": [
+                {
+                  "t": "2026-11-18T15:42:00.000Z",
+                  "bpm": 90.0,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-18T15:46:00.000Z",
+                  "bpm": 96.5,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-18T15:51:00.000Z",
+                  "bpm": 101.9,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-18T15:55:00.000Z",
+                  "bpm": 102.3,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-18T15:59:00.000Z",
+                  "bpm": 103.2,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-18T16:04:00.000Z",
+                  "bpm": 101.6,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-18T16:08:00.000Z",
+                  "bpm": 95.1,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-18T16:13:00.000Z",
+                  "bpm": 90.5,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-18T16:17:00.000Z",
+                  "bpm": 86.0,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-18T16:21:00.000Z",
+                  "bpm": 79.8,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-18T16:26:00.000Z",
+                  "bpm": 78.6,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-18T16:30:00.000Z",
+                  "bpm": 79.9,
+                  "minutes": 1
+                }
+              ],
+              "partial": {
+                "fromUtc": "2026-11-18T15:42:00.000Z",
+                "toUtc": "2026-11-18T16:30:00.000Z",
+                "lateStart": true,
+                "earlyEnd": false
+              }
+            },
+            "attendees": [
+              {
+                "email": "me@example.com",
+                "self": true,
+                "name": "Me Example"
+              },
+              {
+                "email": "dana.sample@example.com",
+                "self": false,
+                "name": "Dana Sample"
+              },
+              {
+                "email": "riley.demo@example.com",
+                "self": false,
+                "name": "Riley Demo"
+              }
+            ],
+            "attendeeNote": null,
+            "sourceType": "calendar",
+            "syncReason": null,
+            "hasTranscript": false
+          },
+          {
+            "id": "m-design",
+            "title": "Design sync",
+            "kind": "internal",
+            "day": "2026-11-18",
+            "startUtc": "2026-11-18T18:00:00.000Z",
+            "endUtc": "2026-11-18T18:45:00.000Z",
+            "startLocal": "2026-11-18T13:00:00-05:00",
+            "endLocal": "2026-11-18T13:45:00-05:00",
+            "afterHours": false,
+            "earlyStart": false,
+            "attendeeCount": 2,
+            "durationS": 2700,
+            "ouraMorningDay": "2026-11-18",
+            "signals": {
+              "stressHighS": null,
+              "recoveryHighS": null,
+              "stressSummary": null,
+              "stressSource": "none",
+              "readinessProxy": null,
+              "nextSleepScore": null,
+              "nextReadinessScore": 71,
+              "nextHrv": null,
+              "nextLowestHr": null,
+              "nextTotalSleepS": null
+            },
+            "score": 0.4,
+            "flags": [],
+            "hrStress": {
+              "coverage": "none",
+              "method": "heartrate_proxy",
+              "methodNote": "WHOOP heart rate inside the meeting.",
+              "sampleCount": 0,
+              "meanBpm": null,
+              "maxBpm": null,
+              "dayAwakeMeanBpm": null,
+              "restingBpm": null,
+              "elevatedThresholdBpm": null,
+              "elevatedPct": null,
+              "elevatedMinutes": null,
+              "meanVsAwake": null,
+              "zone": null,
+              "headline": "No heart rate",
+              "story": "No heart rate for this meeting.",
+              "impact": 0,
+              "series": []
+            },
+            "attendees": [
+              {
+                "email": "me@example.com",
+                "self": true,
+                "name": "Me Example"
+              },
+              {
+                "email": "casey.example@example.com",
+                "self": false,
+                "name": "Casey Example"
+              }
+            ],
+            "attendeeNote": null,
+            "sourceType": "calendar",
+            "syncReason": null,
+            "hasTranscript": false
+          },
+          {
+            "id": "m-1on1",
+            "title": "1:1 with Dana",
+            "kind": "internal",
+            "day": "2026-11-18",
+            "startUtc": "2026-11-18T20:00:00.000Z",
+            "endUtc": "2026-11-18T21:00:00.000Z",
+            "startLocal": "2026-11-18T15:00:00-05:00",
+            "endLocal": "2026-11-18T16:00:00-05:00",
+            "afterHours": false,
+            "earlyStart": false,
+            "attendeeCount": 2,
+            "durationS": 3600,
+            "ouraMorningDay": "2026-11-18",
+            "signals": {
+              "stressHighS": null,
+              "recoveryHighS": null,
+              "stressSummary": null,
+              "stressSource": "none",
+              "readinessProxy": null,
+              "nextSleepScore": null,
+              "nextReadinessScore": 71,
+              "nextHrv": null,
+              "nextLowestHr": null,
+              "nextTotalSleepS": null
+            },
+            "score": 0.4,
+            "flags": [],
+            "hrStress": {
+              "coverage": "ok",
+              "source": "WHOOP",
+              "gaps": [],
+              "method": "heartrate_proxy",
+              "methodNote": "WHOOP heart rate inside the meeting window.",
+              "sampleCount": 60,
+              "meanBpm": 79,
+              "maxBpm": 92,
+              "dayAwakeMeanBpm": 72,
+              "restingBpm": 55,
+              "elevatedThresholdBpm": 80,
+              "elevatedPct": 30,
+              "elevatedMinutes": 14,
+              "meanVsAwake": 7,
+              "zone": "moderate",
+              "headline": "Worth watching",
+              "story": "Worth watching: heart rate averaged 79 bpm.",
+              "impact": 12.5,
+              "series": [
+                {
+                  "t": "2026-11-18T20:00:00.000Z",
+                  "bpm": 78.0,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-18T20:05:00.000Z",
+                  "bpm": 82.4,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-18T20:11:00.000Z",
+                  "bpm": 86.2,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-18T20:16:00.000Z",
+                  "bpm": 85.6,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-18T20:22:00.000Z",
+                  "bpm": 86.6,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-18T20:27:00.000Z",
+                  "bpm": 86.0,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-18T20:33:00.000Z",
+                  "bpm": 81.1,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-18T20:38:00.000Z",
+                  "bpm": 78.7,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-18T20:44:00.000Z",
+                  "bpm": 76.3,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-18T20:49:00.000Z",
+                  "bpm": 71.7,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-18T20:55:00.000Z",
+                  "bpm": 71.3,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-18T21:00:00.000Z",
+                  "bpm": 72.5,
+                  "minutes": 1
+                }
+              ],
+              "partial": null
+            },
+            "attendees": [
+              {
+                "email": "me@example.com",
+                "self": true,
+                "name": "Me Example"
+              },
+              {
+                "email": "dana.sample@example.com",
+                "self": false,
+                "name": "Dana Sample"
+              }
+            ],
+            "attendeeNote": null,
+            "sourceType": "calendar",
+            "syncReason": null,
+            "hasTranscript": false
+          }
+        ]
+      },
+      {
+        "day": "2026-11-19",
+        "meetingCount": 3,
+        "totalDurationS": 7200,
+        "afterHoursCount": 0,
+        "earlyStartCount": 0,
+        "elevated": 0,
+        "watching": 1,
+        "restored": 1,
+        "noHr": 1,
+        "meanBpm": 78.5,
+        "morning": {
+          "sleepScore": 80,
+          "readinessScore": 71,
+          "strain": 10.2
+        },
+        "nextMorning": {
+          "sleepScore": 78,
+          "readinessScore": 48,
+          "strain": null
+        },
+        "meetings": [
+          {
+            "id": "m-standup",
+            "title": "Team standup",
+            "kind": "internal",
+            "day": "2026-11-19",
+            "startUtc": "2026-11-19T14:00:00.000Z",
+            "endUtc": "2026-11-19T14:30:00.000Z",
+            "startLocal": "2026-11-19T09:00:00-05:00",
+            "endLocal": "2026-11-19T09:30:00-05:00",
+            "afterHours": false,
+            "earlyStart": false,
+            "attendeeCount": 3,
+            "durationS": 1800,
+            "ouraMorningDay": "2026-11-19",
+            "signals": {
+              "stressHighS": null,
+              "recoveryHighS": null,
+              "stressSummary": null,
+              "stressSource": "none",
+              "readinessProxy": null,
+              "nextSleepScore": null,
+              "nextReadinessScore": 48,
+              "nextHrv": null,
+              "nextLowestHr": null,
+              "nextTotalSleepS": null
+            },
+            "score": 0.4,
+            "flags": [],
+            "hrStress": {
+              "coverage": "ok",
+              "source": "WHOOP",
+              "gaps": [],
+              "method": "heartrate_proxy",
+              "methodNote": "WHOOP heart rate inside the meeting window.",
+              "sampleCount": 30,
+              "meanBpm": 68,
+              "maxBpm": 74,
+              "dayAwakeMeanBpm": 72,
+              "restingBpm": 55,
+              "elevatedThresholdBpm": 80,
+              "elevatedPct": 4,
+              "elevatedMinutes": 1,
+              "meanVsAwake": -4,
+              "zone": "low",
+              "headline": "Restored",
+              "story": "Restored: heart rate averaged 68 bpm.",
+              "impact": 1.0,
+              "series": [
+                {
+                  "t": "2026-11-19T14:00:00.000Z",
+                  "bpm": 67.0,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-19T14:03:00.000Z",
+                  "bpm": 69.6,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-19T14:05:00.000Z",
+                  "bpm": 71.8,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-19T14:08:00.000Z",
+                  "bpm": 70.5,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-19T14:11:00.000Z",
+                  "bpm": 71.5,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-19T14:14:00.000Z",
+                  "bpm": 71.7,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-19T14:16:00.000Z",
+                  "bpm": 68.4,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-19T14:19:00.000Z",
+                  "bpm": 67.9,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-19T14:22:00.000Z",
+                  "bpm": 67.3,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-19T14:25:00.000Z",
+                  "bpm": 64.1,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-19T14:27:00.000Z",
+                  "bpm": 64.5,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-19T14:30:00.000Z",
+                  "bpm": 65.5,
+                  "minutes": 1
+                }
+              ],
+              "partial": null
+            },
+            "attendees": [
+              {
+                "email": "me@example.com",
+                "self": true,
+                "name": "Me Example"
+              },
+              {
+                "email": "casey.example@example.com",
+                "self": false,
+                "name": "Casey Example"
+              },
+              {
+                "email": "sam.placeholder@example.com",
+                "self": false,
+                "name": "Sam Placeholder"
+              }
+            ],
+            "attendeeNote": null,
+            "sourceType": "calendar",
+            "syncReason": null,
+            "hasTranscript": false
+          },
+          {
+            "id": "m-pipeline",
+            "title": "Pipeline review",
+            "kind": "client",
+            "day": "2026-11-19",
+            "startUtc": "2026-11-19T15:30:00.000Z",
+            "endUtc": "2026-11-19T16:30:00.000Z",
+            "startLocal": "2026-11-19T10:30:00-05:00",
+            "endLocal": "2026-11-19T11:30:00-05:00",
+            "afterHours": false,
+            "earlyStart": false,
+            "attendeeCount": 3,
+            "durationS": 3600,
+            "ouraMorningDay": "2026-11-19",
+            "signals": {
+              "stressHighS": null,
+              "recoveryHighS": null,
+              "stressSummary": null,
+              "stressSource": "none",
+              "readinessProxy": null,
+              "nextSleepScore": null,
+              "nextReadinessScore": 48,
+              "nextHrv": null,
+              "nextLowestHr": null,
+              "nextTotalSleepS": null
+            },
+            "score": 0.4,
+            "flags": [],
+            "hrStress": {
+              "coverage": "ok",
+              "source": "WHOOP",
+              "gaps": [],
+              "method": "heartrate_proxy",
+              "methodNote": "WHOOP heart rate inside the meeting window.",
+              "sampleCount": 48,
+              "meanBpm": 91,
+              "maxBpm": 112,
+              "dayAwakeMeanBpm": 72,
+              "restingBpm": 55,
+              "elevatedThresholdBpm": 80,
+              "elevatedPct": 62,
+              "elevatedMinutes": 37,
+              "meanVsAwake": 19,
+              "zone": "high",
+              "headline": "Elevated",
+              "story": "Elevated: heart rate averaged 91 bpm.",
+              "impact": 41.2,
+              "series": [
+                {
+                  "t": "2026-11-19T15:42:00.000Z",
+                  "bpm": 90.0,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-19T15:46:00.000Z",
+                  "bpm": 96.5,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-19T15:51:00.000Z",
+                  "bpm": 101.9,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-19T15:55:00.000Z",
+                  "bpm": 102.3,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-19T15:59:00.000Z",
+                  "bpm": 103.2,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-19T16:04:00.000Z",
+                  "bpm": 101.6,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-19T16:08:00.000Z",
+                  "bpm": 95.1,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-19T16:13:00.000Z",
+                  "bpm": 90.5,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-19T16:17:00.000Z",
+                  "bpm": 86.0,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-19T16:21:00.000Z",
+                  "bpm": 79.8,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-19T16:26:00.000Z",
+                  "bpm": 78.6,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-19T16:30:00.000Z",
+                  "bpm": 79.9,
+                  "minutes": 1
+                }
+              ],
+              "partial": {
+                "fromUtc": "2026-11-19T15:42:00.000Z",
+                "toUtc": "2026-11-19T16:30:00.000Z",
+                "lateStart": true,
+                "earlyEnd": false
+              }
+            },
+            "attendees": [
+              {
+                "email": "me@example.com",
+                "self": true,
+                "name": "Me Example"
+              },
+              {
+                "email": "dana.sample@example.com",
+                "self": false,
+                "name": "Dana Sample"
+              },
+              {
+                "email": "riley.demo@example.com",
+                "self": false,
+                "name": "Riley Demo"
+              }
+            ],
+            "attendeeNote": null,
+            "sourceType": "calendar",
+            "syncReason": null,
+            "hasTranscript": false
+          },
+          {
+            "id": "m-design",
+            "title": "Design sync",
+            "kind": "internal",
+            "day": "2026-11-19",
+            "startUtc": "2026-11-19T18:00:00.000Z",
+            "endUtc": "2026-11-19T18:45:00.000Z",
+            "startLocal": "2026-11-19T13:00:00-05:00",
+            "endLocal": "2026-11-19T13:45:00-05:00",
+            "afterHours": false,
+            "earlyStart": false,
+            "attendeeCount": 2,
+            "durationS": 2700,
+            "ouraMorningDay": "2026-11-19",
+            "signals": {
+              "stressHighS": null,
+              "recoveryHighS": null,
+              "stressSummary": null,
+              "stressSource": "none",
+              "readinessProxy": null,
+              "nextSleepScore": null,
+              "nextReadinessScore": 48,
+              "nextHrv": null,
+              "nextLowestHr": null,
+              "nextTotalSleepS": null
+            },
+            "score": 0.4,
+            "flags": [],
+            "hrStress": {
+              "coverage": "none",
+              "method": "heartrate_proxy",
+              "methodNote": "WHOOP heart rate inside the meeting.",
+              "sampleCount": 0,
+              "meanBpm": null,
+              "maxBpm": null,
+              "dayAwakeMeanBpm": null,
+              "restingBpm": null,
+              "elevatedThresholdBpm": null,
+              "elevatedPct": null,
+              "elevatedMinutes": null,
+              "meanVsAwake": null,
+              "zone": null,
+              "headline": "No heart rate",
+              "story": "No heart rate for this meeting.",
+              "impact": 0,
+              "series": []
+            },
+            "attendees": [
+              {
+                "email": "me@example.com",
+                "self": true,
+                "name": "Me Example"
+              },
+              {
+                "email": "casey.example@example.com",
+                "self": false,
+                "name": "Casey Example"
+              }
+            ],
+            "attendeeNote": null,
+            "sourceType": "calendar",
+            "syncReason": null,
+            "hasTranscript": false
+          }
+        ]
+      },
+      {
+        "day": "2026-11-20",
+        "meetingCount": 5,
+        "totalDurationS": 14400,
+        "afterHoursCount": 1,
+        "earlyStartCount": 0,
+        "elevated": 1,
+        "watching": 1,
+        "restored": 1,
+        "noHr": 1,
+        "meanBpm": 78.5,
+        "morning": null,
+        "nextMorning": {
+          "sleepScore": 78,
+          "readinessScore": 81,
+          "strain": null
+        },
+        "meetings": [
+          {
+            "id": "m-standup",
+            "title": "Team standup",
+            "kind": "internal",
+            "day": "2026-11-20",
+            "startUtc": "2026-11-20T14:00:00.000Z",
+            "endUtc": "2026-11-20T14:30:00.000Z",
+            "startLocal": "2026-11-20T09:00:00-05:00",
+            "endLocal": "2026-11-20T09:30:00-05:00",
+            "afterHours": false,
+            "earlyStart": false,
+            "attendeeCount": 3,
+            "durationS": 1800,
+            "ouraMorningDay": "2026-11-20",
+            "signals": {
+              "stressHighS": null,
+              "recoveryHighS": null,
+              "stressSummary": null,
+              "stressSource": "none",
+              "readinessProxy": null,
+              "nextSleepScore": null,
+              "nextReadinessScore": 81,
+              "nextHrv": null,
+              "nextLowestHr": null,
+              "nextTotalSleepS": null
+            },
+            "score": 0.4,
+            "flags": [],
+            "hrStress": {
+              "coverage": "ok",
+              "source": "WHOOP",
+              "gaps": [],
+              "method": "heartrate_proxy",
+              "methodNote": "WHOOP heart rate inside the meeting window.",
+              "sampleCount": 30,
+              "meanBpm": 68,
+              "maxBpm": 74,
+              "dayAwakeMeanBpm": 72,
+              "restingBpm": 55,
+              "elevatedThresholdBpm": 80,
+              "elevatedPct": 4,
+              "elevatedMinutes": 1,
+              "meanVsAwake": -4,
+              "zone": "low",
+              "headline": "Restored",
+              "story": "Restored: heart rate averaged 68 bpm.",
+              "impact": 1.0,
+              "series": [
+                {
+                  "t": "2026-11-20T14:00:00.000Z",
+                  "bpm": 67.0,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T14:03:00.000Z",
+                  "bpm": 69.6,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T14:05:00.000Z",
+                  "bpm": 71.8,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T14:08:00.000Z",
+                  "bpm": 70.5,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T14:11:00.000Z",
+                  "bpm": 71.5,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T14:14:00.000Z",
+                  "bpm": 71.7,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T14:16:00.000Z",
+                  "bpm": 68.4,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T14:19:00.000Z",
+                  "bpm": 67.9,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T14:22:00.000Z",
+                  "bpm": 67.3,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T14:25:00.000Z",
+                  "bpm": 64.1,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T14:27:00.000Z",
+                  "bpm": 64.5,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T14:30:00.000Z",
+                  "bpm": 65.5,
+                  "minutes": 1
+                }
+              ],
+              "partial": null
+            },
+            "attendees": [
+              {
+                "email": "me@example.com",
+                "self": true,
+                "name": "Me Example"
+              },
+              {
+                "email": "casey.example@example.com",
+                "self": false,
+                "name": "Casey Example"
+              },
+              {
+                "email": "sam.placeholder@example.com",
+                "self": false,
+                "name": "Sam Placeholder"
+              }
+            ],
+            "attendeeNote": null,
+            "sourceType": "calendar",
+            "syncReason": null,
+            "hasTranscript": false
+          },
+          {
+            "id": "m-pipeline",
+            "title": "Pipeline review",
+            "kind": "client",
+            "day": "2026-11-20",
+            "startUtc": "2026-11-20T15:30:00.000Z",
+            "endUtc": "2026-11-20T16:30:00.000Z",
+            "startLocal": "2026-11-20T10:30:00-05:00",
+            "endLocal": "2026-11-20T11:30:00-05:00",
+            "afterHours": false,
+            "earlyStart": false,
+            "attendeeCount": 3,
+            "durationS": 3600,
+            "ouraMorningDay": "2026-11-20",
+            "signals": {
+              "stressHighS": null,
+              "recoveryHighS": null,
+              "stressSummary": null,
+              "stressSource": "none",
+              "readinessProxy": null,
+              "nextSleepScore": null,
+              "nextReadinessScore": 81,
+              "nextHrv": null,
+              "nextLowestHr": null,
+              "nextTotalSleepS": null
+            },
+            "score": 0.4,
+            "flags": [],
+            "hrStress": {
+              "coverage": "ok",
+              "source": "WHOOP",
+              "gaps": [],
+              "method": "heartrate_proxy",
+              "methodNote": "WHOOP heart rate inside the meeting window.",
+              "sampleCount": 48,
+              "meanBpm": 91,
+              "maxBpm": 112,
+              "dayAwakeMeanBpm": 72,
+              "restingBpm": 55,
+              "elevatedThresholdBpm": 80,
+              "elevatedPct": 62,
+              "elevatedMinutes": 37,
+              "meanVsAwake": 19,
+              "zone": "high",
+              "headline": "Elevated",
+              "story": "Elevated: heart rate averaged 91 bpm.",
+              "impact": 41.2,
+              "series": [
+                {
+                  "t": "2026-11-20T15:42:00.000Z",
+                  "bpm": 90.0,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T15:46:00.000Z",
+                  "bpm": 96.5,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T15:51:00.000Z",
+                  "bpm": 101.9,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T15:55:00.000Z",
+                  "bpm": 102.3,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T15:59:00.000Z",
+                  "bpm": 103.2,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T16:04:00.000Z",
+                  "bpm": 101.6,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T16:08:00.000Z",
+                  "bpm": 95.1,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T16:13:00.000Z",
+                  "bpm": 90.5,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T16:17:00.000Z",
+                  "bpm": 86.0,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T16:21:00.000Z",
+                  "bpm": 79.8,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T16:26:00.000Z",
+                  "bpm": 78.6,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T16:30:00.000Z",
+                  "bpm": 79.9,
+                  "minutes": 1
+                }
+              ],
+              "partial": {
+                "fromUtc": "2026-11-20T15:42:00.000Z",
+                "toUtc": "2026-11-20T16:30:00.000Z",
+                "lateStart": true,
+                "earlyEnd": false
+              }
+            },
+            "attendees": [
+              {
+                "email": "me@example.com",
+                "self": true,
+                "name": "Me Example"
+              },
+              {
+                "email": "dana.sample@example.com",
+                "self": false,
+                "name": "Dana Sample"
+              },
+              {
+                "email": "riley.demo@example.com",
+                "self": false,
+                "name": "Riley Demo"
+              }
+            ],
+            "attendeeNote": null,
+            "sourceType": "calendar",
+            "syncReason": null,
+            "hasTranscript": false
+          },
+          {
+            "id": "m-design",
+            "title": "Design sync",
+            "kind": "internal",
+            "day": "2026-11-20",
+            "startUtc": "2026-11-20T18:00:00.000Z",
+            "endUtc": "2026-11-20T18:45:00.000Z",
+            "startLocal": "2026-11-20T13:00:00-05:00",
+            "endLocal": "2026-11-20T13:45:00-05:00",
+            "afterHours": false,
+            "earlyStart": false,
+            "attendeeCount": 2,
+            "durationS": 2700,
+            "ouraMorningDay": "2026-11-20",
+            "signals": {
+              "stressHighS": null,
+              "recoveryHighS": null,
+              "stressSummary": null,
+              "stressSource": "none",
+              "readinessProxy": null,
+              "nextSleepScore": null,
+              "nextReadinessScore": 81,
+              "nextHrv": null,
+              "nextLowestHr": null,
+              "nextTotalSleepS": null
+            },
+            "score": 0.4,
+            "flags": [],
+            "hrStress": {
+              "coverage": "none",
+              "method": "heartrate_proxy",
+              "methodNote": "WHOOP heart rate inside the meeting.",
+              "sampleCount": 0,
+              "meanBpm": null,
+              "maxBpm": null,
+              "dayAwakeMeanBpm": null,
+              "restingBpm": null,
+              "elevatedThresholdBpm": null,
+              "elevatedPct": null,
+              "elevatedMinutes": null,
+              "meanVsAwake": null,
+              "zone": null,
+              "headline": "No heart rate",
+              "story": "No heart rate for this meeting.",
+              "impact": 0,
+              "series": []
+            },
+            "attendees": [
+              {
+                "email": "me@example.com",
+                "self": true,
+                "name": "Me Example"
+              },
+              {
+                "email": "casey.example@example.com",
+                "self": false,
+                "name": "Casey Example"
+              }
+            ],
+            "attendeeNote": null,
+            "sourceType": "calendar",
+            "syncReason": null,
+            "hasTranscript": false
+          },
+          {
+            "id": "m-1on1",
+            "title": "1:1 with Dana",
+            "kind": "internal",
+            "day": "2026-11-20",
+            "startUtc": "2026-11-20T20:00:00.000Z",
+            "endUtc": "2026-11-20T21:00:00.000Z",
+            "startLocal": "2026-11-20T15:00:00-05:00",
+            "endLocal": "2026-11-20T16:00:00-05:00",
+            "afterHours": false,
+            "earlyStart": false,
+            "attendeeCount": 2,
+            "durationS": 3600,
+            "ouraMorningDay": "2026-11-20",
+            "signals": {
+              "stressHighS": null,
+              "recoveryHighS": null,
+              "stressSummary": null,
+              "stressSource": "none",
+              "readinessProxy": null,
+              "nextSleepScore": null,
+              "nextReadinessScore": 81,
+              "nextHrv": null,
+              "nextLowestHr": null,
+              "nextTotalSleepS": null
+            },
+            "score": 0.4,
+            "flags": [],
+            "hrStress": {
+              "coverage": "ok",
+              "source": "WHOOP",
+              "gaps": [],
+              "method": "heartrate_proxy",
+              "methodNote": "WHOOP heart rate inside the meeting window.",
+              "sampleCount": 60,
+              "meanBpm": 79,
+              "maxBpm": 92,
+              "dayAwakeMeanBpm": 72,
+              "restingBpm": 55,
+              "elevatedThresholdBpm": 80,
+              "elevatedPct": 30,
+              "elevatedMinutes": 14,
+              "meanVsAwake": 7,
+              "zone": "moderate",
+              "headline": "Worth watching",
+              "story": "Worth watching: heart rate averaged 79 bpm.",
+              "impact": 12.5,
+              "series": [
+                {
+                  "t": "2026-11-20T20:00:00.000Z",
+                  "bpm": 78.0,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T20:05:00.000Z",
+                  "bpm": 82.4,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T20:11:00.000Z",
+                  "bpm": 86.2,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T20:16:00.000Z",
+                  "bpm": 85.6,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T20:22:00.000Z",
+                  "bpm": 86.6,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T20:27:00.000Z",
+                  "bpm": 86.0,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T20:33:00.000Z",
+                  "bpm": 81.1,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T20:38:00.000Z",
+                  "bpm": 78.7,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T20:44:00.000Z",
+                  "bpm": 76.3,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T20:49:00.000Z",
+                  "bpm": 71.7,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T20:55:00.000Z",
+                  "bpm": 71.3,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T21:00:00.000Z",
+                  "bpm": 72.5,
+                  "minutes": 1
+                }
+              ],
+              "partial": null
+            },
+            "attendees": [
+              {
+                "email": "me@example.com",
+                "self": true,
+                "name": "Me Example"
+              },
+              {
+                "email": "dana.sample@example.com",
+                "self": false,
+                "name": "Dana Sample"
+              }
+            ],
+            "attendeeNote": null,
+            "sourceType": "calendar",
+            "syncReason": null,
+            "hasTranscript": false
+          },
+          {
+            "id": "m-board",
+            "title": "Board prep",
+            "kind": "internal",
+            "day": "2026-11-20",
+            "startUtc": "2026-11-20T23:30:00.000Z",
+            "endUtc": "2026-11-21T00:15:00.000Z",
+            "startLocal": "2026-11-20T18:30:00-05:00",
+            "endLocal": "2026-11-20T19:15:00-05:00",
+            "afterHours": true,
+            "earlyStart": false,
+            "attendeeCount": 3,
+            "durationS": 2700,
+            "ouraMorningDay": "2026-11-20",
+            "signals": {
+              "stressHighS": null,
+              "recoveryHighS": null,
+              "stressSummary": null,
+              "stressSource": "none",
+              "readinessProxy": null,
+              "nextSleepScore": null,
+              "nextReadinessScore": 81,
+              "nextHrv": null,
+              "nextLowestHr": null,
+              "nextTotalSleepS": null
+            },
+            "score": 0.4,
+            "flags": [
+              "after_hours"
+            ],
+            "hrStress": {
+              "coverage": "ok",
+              "source": "WHOOP",
+              "gaps": [],
+              "method": "heartrate_proxy",
+              "methodNote": "WHOOP heart rate inside the meeting window.",
+              "sampleCount": 45,
+              "meanBpm": 81,
+              "maxBpm": 95,
+              "dayAwakeMeanBpm": 72,
+              "restingBpm": 55,
+              "elevatedThresholdBpm": 80,
+              "elevatedPct": 30,
+              "elevatedMinutes": 14,
+              "meanVsAwake": 9,
+              "zone": "moderate",
+              "headline": "Worth watching",
+              "story": "Worth watching: heart rate averaged 81 bpm.",
+              "impact": 12.5,
+              "series": [
+                {
+                  "t": "2026-11-20T23:30:00.000Z",
+                  "bpm": 80.0,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T23:34:00.000Z",
+                  "bpm": 84.7,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T23:38:00.000Z",
+                  "bpm": 88.6,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T23:42:00.000Z",
+                  "bpm": 88.2,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T23:46:00.000Z",
+                  "bpm": 89.1,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T23:50:00.000Z",
+                  "bpm": 88.4,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T23:55:00.000Z",
+                  "bpm": 83.4,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-20T23:59:00.000Z",
+                  "bpm": 80.7,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-21T00:03:00.000Z",
+                  "bpm": 78.0,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-21T00:07:00.000Z",
+                  "bpm": 73.2,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-21T00:11:00.000Z",
+                  "bpm": 72.7,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-21T00:15:00.000Z",
+                  "bpm": 73.9,
+                  "minutes": 1
+                }
+              ],
+              "partial": null
+            },
+            "attendees": [
+              {
+                "email": "me@example.com",
+                "self": true,
+                "name": "Me Example"
+              },
+              {
+                "email": "sam.placeholder@example.com",
+                "self": false,
+                "name": "Sam Placeholder"
+              },
+              {
+                "email": "jordan.fixture@example.com",
+                "self": false,
+                "name": null
+              }
+            ],
+            "attendeeNote": null,
+            "sourceType": "calendar",
+            "syncReason": null,
+            "hasTranscript": false
+          }
+        ]
+      },
+      {
+        "day": "2026-11-21",
+        "meetingCount": 0,
+        "totalDurationS": 0,
+        "afterHoursCount": 0,
+        "earlyStartCount": 0,
+        "elevated": 0,
+        "watching": 0,
+        "restored": 0,
+        "noHr": 0,
+        "meanBpm": null,
+        "morning": {
+          "sleepScore": 80,
+          "readinessScore": 81,
+          "strain": 10.2
+        },
+        "nextMorning": {
+          "sleepScore": 78,
+          "readinessScore": 74,
+          "strain": null
+        },
+        "meetings": []
+      },
+      {
+        "day": "2026-11-22",
+        "meetingCount": 0,
+        "totalDurationS": 0,
+        "afterHoursCount": 0,
+        "earlyStartCount": 0,
+        "elevated": 0,
+        "watching": 0,
+        "restored": 0,
+        "noHr": 0,
+        "meanBpm": null,
+        "morning": {
+          "sleepScore": 80,
+          "readinessScore": 74,
+          "strain": 10.2
+        },
+        "nextMorning": {
+          "sleepScore": 78,
+          "readinessScore": 69,
+          "strain": null
+        },
+        "meetings": []
+      },
+      {
+        "day": "2026-11-23",
+        "meetingCount": 3,
+        "totalDurationS": 9000,
+        "afterHoursCount": 0,
+        "earlyStartCount": 0,
+        "elevated": 0,
+        "watching": 1,
+        "restored": 1,
+        "noHr": 1,
+        "meanBpm": 78.5,
+        "morning": {
+          "sleepScore": 80,
+          "readinessScore": 69,
+          "strain": 10.2
+        },
+        "nextMorning": {
+          "sleepScore": 78,
+          "readinessScore": 72,
+          "strain": null
+        },
+        "meetings": [
+          {
+            "id": "m-standup",
+            "title": "Team standup",
+            "kind": "internal",
+            "day": "2026-11-23",
+            "startUtc": "2026-11-23T14:00:00.000Z",
+            "endUtc": "2026-11-23T14:30:00.000Z",
+            "startLocal": "2026-11-23T09:00:00-05:00",
+            "endLocal": "2026-11-23T09:30:00-05:00",
+            "afterHours": false,
+            "earlyStart": false,
+            "attendeeCount": 3,
+            "durationS": 1800,
+            "ouraMorningDay": "2026-11-23",
+            "signals": {
+              "stressHighS": null,
+              "recoveryHighS": null,
+              "stressSummary": null,
+              "stressSource": "none",
+              "readinessProxy": null,
+              "nextSleepScore": null,
+              "nextReadinessScore": 72,
+              "nextHrv": null,
+              "nextLowestHr": null,
+              "nextTotalSleepS": null
+            },
+            "score": 0.4,
+            "flags": [],
+            "hrStress": {
+              "coverage": "ok",
+              "source": "WHOOP",
+              "gaps": [],
+              "method": "heartrate_proxy",
+              "methodNote": "WHOOP heart rate inside the meeting window.",
+              "sampleCount": 30,
+              "meanBpm": 68,
+              "maxBpm": 74,
+              "dayAwakeMeanBpm": 72,
+              "restingBpm": 55,
+              "elevatedThresholdBpm": 80,
+              "elevatedPct": 4,
+              "elevatedMinutes": 1,
+              "meanVsAwake": -4,
+              "zone": "low",
+              "headline": "Restored",
+              "story": "Restored: heart rate averaged 68 bpm.",
+              "impact": 1.0,
+              "series": [
+                {
+                  "t": "2026-11-23T14:00:00.000Z",
+                  "bpm": 67.0,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-23T14:03:00.000Z",
+                  "bpm": 69.6,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-23T14:05:00.000Z",
+                  "bpm": 71.8,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-23T14:08:00.000Z",
+                  "bpm": 70.5,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-23T14:11:00.000Z",
+                  "bpm": 71.5,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-23T14:14:00.000Z",
+                  "bpm": 71.7,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-23T14:16:00.000Z",
+                  "bpm": 68.4,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-23T14:19:00.000Z",
+                  "bpm": 67.9,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-23T14:22:00.000Z",
+                  "bpm": 67.3,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-23T14:25:00.000Z",
+                  "bpm": 64.1,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-23T14:27:00.000Z",
+                  "bpm": 64.5,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-23T14:30:00.000Z",
+                  "bpm": 65.5,
+                  "minutes": 1
+                }
+              ],
+              "partial": null
+            },
+            "attendees": [
+              {
+                "email": "me@example.com",
+                "self": true,
+                "name": "Me Example"
+              },
+              {
+                "email": "casey.example@example.com",
+                "self": false,
+                "name": "Casey Example"
+              },
+              {
+                "email": "sam.placeholder@example.com",
+                "self": false,
+                "name": "Sam Placeholder"
+              }
+            ],
+            "attendeeNote": null,
+            "sourceType": "calendar",
+            "syncReason": null,
+            "hasTranscript": false
+          },
+          {
+            "id": "m-pipeline",
+            "title": "Pipeline review",
+            "kind": "client",
+            "day": "2026-11-23",
+            "startUtc": "2026-11-23T15:30:00.000Z",
+            "endUtc": "2026-11-23T16:30:00.000Z",
+            "startLocal": "2026-11-23T10:30:00-05:00",
+            "endLocal": "2026-11-23T11:30:00-05:00",
+            "afterHours": false,
+            "earlyStart": false,
+            "attendeeCount": 3,
+            "durationS": 3600,
+            "ouraMorningDay": "2026-11-23",
+            "signals": {
+              "stressHighS": null,
+              "recoveryHighS": null,
+              "stressSummary": null,
+              "stressSource": "none",
+              "readinessProxy": null,
+              "nextSleepScore": null,
+              "nextReadinessScore": 72,
+              "nextHrv": null,
+              "nextLowestHr": null,
+              "nextTotalSleepS": null
+            },
+            "score": 0.4,
+            "flags": [],
+            "hrStress": {
+              "coverage": "ok",
+              "source": "WHOOP",
+              "gaps": [],
+              "method": "heartrate_proxy",
+              "methodNote": "WHOOP heart rate inside the meeting window.",
+              "sampleCount": 48,
+              "meanBpm": 91,
+              "maxBpm": 112,
+              "dayAwakeMeanBpm": 72,
+              "restingBpm": 55,
+              "elevatedThresholdBpm": 80,
+              "elevatedPct": 62,
+              "elevatedMinutes": 37,
+              "meanVsAwake": 19,
+              "zone": "high",
+              "headline": "Elevated",
+              "story": "Elevated: heart rate averaged 91 bpm.",
+              "impact": 41.2,
+              "series": [
+                {
+                  "t": "2026-11-23T15:42:00.000Z",
+                  "bpm": 90.0,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-23T15:46:00.000Z",
+                  "bpm": 96.5,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-23T15:51:00.000Z",
+                  "bpm": 101.9,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-23T15:55:00.000Z",
+                  "bpm": 102.3,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-23T15:59:00.000Z",
+                  "bpm": 103.2,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-23T16:04:00.000Z",
+                  "bpm": 101.6,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-23T16:08:00.000Z",
+                  "bpm": 95.1,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-23T16:13:00.000Z",
+                  "bpm": 90.5,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-23T16:17:00.000Z",
+                  "bpm": 86.0,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-23T16:21:00.000Z",
+                  "bpm": 79.8,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-23T16:26:00.000Z",
+                  "bpm": 78.6,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-23T16:30:00.000Z",
+                  "bpm": 79.9,
+                  "minutes": 1
+                }
+              ],
+              "partial": {
+                "fromUtc": "2026-11-23T15:42:00.000Z",
+                "toUtc": "2026-11-23T16:30:00.000Z",
+                "lateStart": true,
+                "earlyEnd": false
+              }
+            },
+            "attendees": [
+              {
+                "email": "me@example.com",
+                "self": true,
+                "name": "Me Example"
+              },
+              {
+                "email": "dana.sample@example.com",
+                "self": false,
+                "name": "Dana Sample"
+              },
+              {
+                "email": "riley.demo@example.com",
+                "self": false,
+                "name": "Riley Demo"
+              }
+            ],
+            "attendeeNote": null,
+            "sourceType": "calendar",
+            "syncReason": null,
+            "hasTranscript": false
+          },
+          {
+            "id": "m-design",
+            "title": "Design sync",
+            "kind": "internal",
+            "day": "2026-11-23",
+            "startUtc": "2026-11-23T18:00:00.000Z",
+            "endUtc": "2026-11-23T18:45:00.000Z",
+            "startLocal": "2026-11-23T13:00:00-05:00",
+            "endLocal": "2026-11-23T13:45:00-05:00",
+            "afterHours": false,
+            "earlyStart": false,
+            "attendeeCount": 2,
+            "durationS": 2700,
+            "ouraMorningDay": "2026-11-23",
+            "signals": {
+              "stressHighS": null,
+              "recoveryHighS": null,
+              "stressSummary": null,
+              "stressSource": "none",
+              "readinessProxy": null,
+              "nextSleepScore": null,
+              "nextReadinessScore": 72,
+              "nextHrv": null,
+              "nextLowestHr": null,
+              "nextTotalSleepS": null
+            },
+            "score": 0.4,
+            "flags": [],
+            "hrStress": {
+              "coverage": "none",
+              "method": "heartrate_proxy",
+              "methodNote": "WHOOP heart rate inside the meeting.",
+              "sampleCount": 0,
+              "meanBpm": null,
+              "maxBpm": null,
+              "dayAwakeMeanBpm": null,
+              "restingBpm": null,
+              "elevatedThresholdBpm": null,
+              "elevatedPct": null,
+              "elevatedMinutes": null,
+              "meanVsAwake": null,
+              "zone": null,
+              "headline": "No heart rate",
+              "story": "No heart rate for this meeting.",
+              "impact": 0,
+              "series": []
+            },
+            "attendees": [
+              {
+                "email": "me@example.com",
+                "self": true,
+                "name": "Me Example"
+              },
+              {
+                "email": "casey.example@example.com",
+                "self": false,
+                "name": "Casey Example"
+              }
+            ],
+            "attendeeNote": null,
+            "sourceType": "calendar",
+            "syncReason": null,
+            "hasTranscript": false
+          }
+        ]
+      },
+      {
+        "day": "2026-11-24",
+        "meetingCount": 5,
+        "totalDurationS": 14400,
+        "afterHoursCount": 1,
+        "earlyStartCount": 0,
+        "elevated": 1,
+        "watching": 1,
+        "restored": 1,
+        "noHr": 1,
+        "meanBpm": 78.5,
+        "morning": {
+          "sleepScore": 80,
+          "readinessScore": 72,
+          "strain": 10.2
+        },
+        "nextMorning": null,
+        "meetings": [
+          {
+            "id": "m-standup",
+            "title": "Team standup",
+            "kind": "internal",
+            "day": "2026-11-24",
+            "startUtc": "2026-11-24T14:00:00.000Z",
+            "endUtc": "2026-11-24T14:30:00.000Z",
+            "startLocal": "2026-11-24T09:00:00-05:00",
+            "endLocal": "2026-11-24T09:30:00-05:00",
+            "afterHours": false,
+            "earlyStart": false,
+            "attendeeCount": 3,
+            "durationS": 1800,
+            "ouraMorningDay": "2026-11-24",
+            "signals": {
+              "stressHighS": null,
+              "recoveryHighS": null,
+              "stressSummary": null,
+              "stressSource": "none",
+              "readinessProxy": null,
+              "nextSleepScore": null,
+              "nextReadinessScore": null,
+              "nextHrv": null,
+              "nextLowestHr": null,
+              "nextTotalSleepS": null
+            },
+            "score": 0.4,
+            "flags": [],
+            "hrStress": {
+              "coverage": "ok",
+              "source": "WHOOP",
+              "gaps": [],
+              "method": "heartrate_proxy",
+              "methodNote": "WHOOP heart rate inside the meeting window.",
+              "sampleCount": 30,
+              "meanBpm": 68,
+              "maxBpm": 74,
+              "dayAwakeMeanBpm": 72,
+              "restingBpm": 55,
+              "elevatedThresholdBpm": 80,
+              "elevatedPct": 4,
+              "elevatedMinutes": 1,
+              "meanVsAwake": -4,
+              "zone": "low",
+              "headline": "Restored",
+              "story": "Restored: heart rate averaged 68 bpm.",
+              "impact": 1.0,
+              "series": [
+                {
+                  "t": "2026-11-24T14:00:00.000Z",
+                  "bpm": 67.0,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T14:03:00.000Z",
+                  "bpm": 69.6,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T14:05:00.000Z",
+                  "bpm": 71.8,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T14:08:00.000Z",
+                  "bpm": 70.5,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T14:11:00.000Z",
+                  "bpm": 71.5,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T14:14:00.000Z",
+                  "bpm": 71.7,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T14:16:00.000Z",
+                  "bpm": 68.4,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T14:19:00.000Z",
+                  "bpm": 67.9,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T14:22:00.000Z",
+                  "bpm": 67.3,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T14:25:00.000Z",
+                  "bpm": 64.1,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T14:27:00.000Z",
+                  "bpm": 64.5,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T14:30:00.000Z",
+                  "bpm": 65.5,
+                  "minutes": 1
+                }
+              ],
+              "partial": null
+            },
+            "attendees": [
+              {
+                "email": "me@example.com",
+                "self": true,
+                "name": "Me Example"
+              },
+              {
+                "email": "casey.example@example.com",
+                "self": false,
+                "name": "Casey Example"
+              },
+              {
+                "email": "sam.placeholder@example.com",
+                "self": false,
+                "name": "Sam Placeholder"
+              }
+            ],
+            "attendeeNote": null,
+            "sourceType": "calendar",
+            "syncReason": null,
+            "hasTranscript": false
+          },
+          {
+            "id": "m-pipeline",
+            "title": "Pipeline review",
+            "kind": "client",
+            "day": "2026-11-24",
+            "startUtc": "2026-11-24T15:30:00.000Z",
+            "endUtc": "2026-11-24T16:30:00.000Z",
+            "startLocal": "2026-11-24T10:30:00-05:00",
+            "endLocal": "2026-11-24T11:30:00-05:00",
+            "afterHours": false,
+            "earlyStart": false,
+            "attendeeCount": 3,
+            "durationS": 3600,
+            "ouraMorningDay": "2026-11-24",
+            "signals": {
+              "stressHighS": null,
+              "recoveryHighS": null,
+              "stressSummary": null,
+              "stressSource": "none",
+              "readinessProxy": null,
+              "nextSleepScore": null,
+              "nextReadinessScore": null,
+              "nextHrv": null,
+              "nextLowestHr": null,
+              "nextTotalSleepS": null
+            },
+            "score": 0.4,
+            "flags": [],
+            "hrStress": {
+              "coverage": "ok",
+              "source": "WHOOP",
+              "gaps": [],
+              "method": "heartrate_proxy",
+              "methodNote": "WHOOP heart rate inside the meeting window.",
+              "sampleCount": 48,
+              "meanBpm": 91,
+              "maxBpm": 112,
+              "dayAwakeMeanBpm": 72,
+              "restingBpm": 55,
+              "elevatedThresholdBpm": 80,
+              "elevatedPct": 62,
+              "elevatedMinutes": 37,
+              "meanVsAwake": 19,
+              "zone": "high",
+              "headline": "Elevated",
+              "story": "Elevated: heart rate averaged 91 bpm.",
+              "impact": 41.2,
+              "series": [
+                {
+                  "t": "2026-11-24T15:42:00.000Z",
+                  "bpm": 90.0,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T15:46:00.000Z",
+                  "bpm": 96.5,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T15:51:00.000Z",
+                  "bpm": 101.9,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T15:55:00.000Z",
+                  "bpm": 102.3,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T15:59:00.000Z",
+                  "bpm": 103.2,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T16:04:00.000Z",
+                  "bpm": 101.6,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T16:08:00.000Z",
+                  "bpm": 95.1,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T16:13:00.000Z",
+                  "bpm": 90.5,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T16:17:00.000Z",
+                  "bpm": 86.0,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T16:21:00.000Z",
+                  "bpm": 79.8,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T16:26:00.000Z",
+                  "bpm": 78.6,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T16:30:00.000Z",
+                  "bpm": 79.9,
+                  "minutes": 1
+                }
+              ],
+              "partial": {
+                "fromUtc": "2026-11-24T15:42:00.000Z",
+                "toUtc": "2026-11-24T16:30:00.000Z",
+                "lateStart": true,
+                "earlyEnd": false
+              }
+            },
+            "attendees": [
+              {
+                "email": "me@example.com",
+                "self": true,
+                "name": "Me Example"
+              },
+              {
+                "email": "dana.sample@example.com",
+                "self": false,
+                "name": "Dana Sample"
+              },
+              {
+                "email": "riley.demo@example.com",
+                "self": false,
+                "name": "Riley Demo"
+              }
+            ],
+            "attendeeNote": null,
+            "sourceType": "calendar",
+            "syncReason": null,
+            "hasTranscript": false
+          },
+          {
+            "id": "m-design",
+            "title": "Design sync",
+            "kind": "internal",
+            "day": "2026-11-24",
+            "startUtc": "2026-11-24T18:00:00.000Z",
+            "endUtc": "2026-11-24T18:45:00.000Z",
+            "startLocal": "2026-11-24T13:00:00-05:00",
+            "endLocal": "2026-11-24T13:45:00-05:00",
+            "afterHours": false,
+            "earlyStart": false,
+            "attendeeCount": 2,
+            "durationS": 2700,
+            "ouraMorningDay": "2026-11-24",
+            "signals": {
+              "stressHighS": null,
+              "recoveryHighS": null,
+              "stressSummary": null,
+              "stressSource": "none",
+              "readinessProxy": null,
+              "nextSleepScore": null,
+              "nextReadinessScore": null,
+              "nextHrv": null,
+              "nextLowestHr": null,
+              "nextTotalSleepS": null
+            },
+            "score": 0.4,
+            "flags": [],
+            "hrStress": {
+              "coverage": "none",
+              "method": "heartrate_proxy",
+              "methodNote": "WHOOP heart rate inside the meeting.",
+              "sampleCount": 0,
+              "meanBpm": null,
+              "maxBpm": null,
+              "dayAwakeMeanBpm": null,
+              "restingBpm": null,
+              "elevatedThresholdBpm": null,
+              "elevatedPct": null,
+              "elevatedMinutes": null,
+              "meanVsAwake": null,
+              "zone": null,
+              "headline": "No heart rate",
+              "story": "No heart rate for this meeting.",
+              "impact": 0,
+              "series": []
+            },
+            "attendees": [
+              {
+                "email": "me@example.com",
+                "self": true,
+                "name": "Me Example"
+              },
+              {
+                "email": "casey.example@example.com",
+                "self": false,
+                "name": "Casey Example"
+              }
+            ],
+            "attendeeNote": null,
+            "sourceType": "calendar",
+            "syncReason": null,
+            "hasTranscript": false
+          },
+          {
+            "id": "m-1on1",
+            "title": "1:1 with Dana",
+            "kind": "internal",
+            "day": "2026-11-24",
+            "startUtc": "2026-11-24T20:00:00.000Z",
+            "endUtc": "2026-11-24T21:00:00.000Z",
+            "startLocal": "2026-11-24T15:00:00-05:00",
+            "endLocal": "2026-11-24T16:00:00-05:00",
+            "afterHours": false,
+            "earlyStart": false,
+            "attendeeCount": 2,
+            "durationS": 3600,
+            "ouraMorningDay": "2026-11-24",
+            "signals": {
+              "stressHighS": null,
+              "recoveryHighS": null,
+              "stressSummary": null,
+              "stressSource": "none",
+              "readinessProxy": null,
+              "nextSleepScore": null,
+              "nextReadinessScore": null,
+              "nextHrv": null,
+              "nextLowestHr": null,
+              "nextTotalSleepS": null
+            },
+            "score": 0.4,
+            "flags": [],
+            "hrStress": {
+              "coverage": "ok",
+              "source": "WHOOP",
+              "gaps": [],
+              "method": "heartrate_proxy",
+              "methodNote": "WHOOP heart rate inside the meeting window.",
+              "sampleCount": 60,
+              "meanBpm": 79,
+              "maxBpm": 92,
+              "dayAwakeMeanBpm": 72,
+              "restingBpm": 55,
+              "elevatedThresholdBpm": 80,
+              "elevatedPct": 30,
+              "elevatedMinutes": 14,
+              "meanVsAwake": 7,
+              "zone": "moderate",
+              "headline": "Worth watching",
+              "story": "Worth watching: heart rate averaged 79 bpm.",
+              "impact": 12.5,
+              "series": [
+                {
+                  "t": "2026-11-24T20:00:00.000Z",
+                  "bpm": 78.0,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T20:05:00.000Z",
+                  "bpm": 82.4,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T20:11:00.000Z",
+                  "bpm": 86.2,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T20:16:00.000Z",
+                  "bpm": 85.6,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T20:22:00.000Z",
+                  "bpm": 86.6,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T20:27:00.000Z",
+                  "bpm": 86.0,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T20:33:00.000Z",
+                  "bpm": 81.1,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T20:38:00.000Z",
+                  "bpm": 78.7,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T20:44:00.000Z",
+                  "bpm": 76.3,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T20:49:00.000Z",
+                  "bpm": 71.7,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T20:55:00.000Z",
+                  "bpm": 71.3,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T21:00:00.000Z",
+                  "bpm": 72.5,
+                  "minutes": 1
+                }
+              ],
+              "partial": null
+            },
+            "attendees": [
+              {
+                "email": "me@example.com",
+                "self": true,
+                "name": "Me Example"
+              },
+              {
+                "email": "dana.sample@example.com",
+                "self": false,
+                "name": "Dana Sample"
+              }
+            ],
+            "attendeeNote": null,
+            "sourceType": "calendar",
+            "syncReason": null,
+            "hasTranscript": false
+          },
+          {
+            "id": "m-board",
+            "title": "Board prep",
+            "kind": "internal",
+            "day": "2026-11-24",
+            "startUtc": "2026-11-24T23:30:00.000Z",
+            "endUtc": "2026-11-25T00:15:00.000Z",
+            "startLocal": "2026-11-24T18:30:00-05:00",
+            "endLocal": "2026-11-24T19:15:00-05:00",
+            "afterHours": true,
+            "earlyStart": false,
+            "attendeeCount": 3,
+            "durationS": 2700,
+            "ouraMorningDay": "2026-11-24",
+            "signals": {
+              "stressHighS": null,
+              "recoveryHighS": null,
+              "stressSummary": null,
+              "stressSource": "none",
+              "readinessProxy": null,
+              "nextSleepScore": null,
+              "nextReadinessScore": null,
+              "nextHrv": null,
+              "nextLowestHr": null,
+              "nextTotalSleepS": null
+            },
+            "score": 0.4,
+            "flags": [
+              "after_hours"
+            ],
+            "hrStress": {
+              "coverage": "ok",
+              "source": "WHOOP",
+              "gaps": [],
+              "method": "heartrate_proxy",
+              "methodNote": "WHOOP heart rate inside the meeting window.",
+              "sampleCount": 45,
+              "meanBpm": 81,
+              "maxBpm": 95,
+              "dayAwakeMeanBpm": 72,
+              "restingBpm": 55,
+              "elevatedThresholdBpm": 80,
+              "elevatedPct": 30,
+              "elevatedMinutes": 14,
+              "meanVsAwake": 9,
+              "zone": "moderate",
+              "headline": "Worth watching",
+              "story": "Worth watching: heart rate averaged 81 bpm.",
+              "impact": 12.5,
+              "series": [
+                {
+                  "t": "2026-11-24T23:30:00.000Z",
+                  "bpm": 80.0,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T23:34:00.000Z",
+                  "bpm": 84.7,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T23:38:00.000Z",
+                  "bpm": 88.6,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T23:42:00.000Z",
+                  "bpm": 88.2,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T23:46:00.000Z",
+                  "bpm": 89.1,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T23:50:00.000Z",
+                  "bpm": 88.4,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T23:55:00.000Z",
+                  "bpm": 83.4,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-24T23:59:00.000Z",
+                  "bpm": 80.7,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-25T00:03:00.000Z",
+                  "bpm": 78.0,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-25T00:07:00.000Z",
+                  "bpm": 73.2,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-25T00:11:00.000Z",
+                  "bpm": 72.7,
+                  "minutes": 1
+                },
+                {
+                  "t": "2026-11-25T00:15:00.000Z",
+                  "bpm": 73.9,
+                  "minutes": 1
+                }
+              ],
+              "partial": null
+            },
+            "attendees": [
+              {
+                "email": "me@example.com",
+                "self": true,
+                "name": "Me Example"
+              },
+              {
+                "email": "sam.placeholder@example.com",
+                "self": false,
+                "name": "Sam Placeholder"
+              },
+              {
+                "email": "jordan.fixture@example.com",
+                "self": false,
+                "name": null
+              }
+            ],
+            "attendeeNote": null,
+            "sourceType": "calendar",
+            "syncReason": null,
+            "hasTranscript": false
+          }
+        ]
+      }
+    ],
+    "wearable": {
+      "source": "whoop",
+      "label": "WHOOP",
+      "hasIntradayHr": true,
+      "hrSource": "whoop_web",
+      "ouraHr": false,
+      "whoopWebHr": true,
+      "readinessLabel": "Recovery",
+      "strainLabel": "Strain",
+      "strainMax": 21,
+      "tagline": "Calendar × WHOOP heart rate and recovery",
+      "note": "Heart rate during the meeting is your WHOOP strap's, minute by minute."
+    },
+    "grain": {
+      "join": "work day D to WHOOP recovery on morning D+1",
+      "range": "A date range is inclusive local days."
+    },
+    "methodNote": "Heart rate during the meeting is your WHOOP strap's, minute by minute."
+  },
+  "usual": {
+    "from": "2026-10-28",
+    "to": "2026-11-24",
+    "days": 28,
+    "recovery": 68,
+    "sleep": 80,
+    "hrv": 62,
+    "restingHr": 54,
+    "strain": 11.2,
+    "meetingHours": 3.5,
+    "afterHours": 0.6
+  },
+  "effect": {
+    "heavyHours": 4,
+    "heavyMeetings": 5,
+    "heavy": {
+      "days": 5,
+      "nextRecovery": 55
+    },
+    "lighter": {
+      "days": 18,
+      "nextRecovery": 70
+    },
+    "cost": 15,
+    "from": "2026-10-28",
+    "to": "2026-11-24"
+  },
+  "costly": [
+    {
+      "day": "2026-11-12",
+      "meetingCount": 6,
+      "meetingHours": 5.5,
+      "afterHours": 2,
+      "nextRecovery": 31,
+      "nextSleep": 62
+    },
+    {
+      "day": "2026-11-05",
+      "meetingCount": 5,
+      "meetingHours": 4.5,
+      "afterHours": 1,
+      "nextRecovery": 38,
+      "nextSleep": 70
+    },
+    {
+      "day": "2026-11-17",
+      "meetingCount": 4,
+      "meetingHours": 4,
+      "afterHours": 0,
+      "nextRecovery": 44,
+      "nextSleep": 74
+    }
+  ],
+  "people": [
+    {
+      "email": "dana.sample@example.com",
+      "name": "Dana Sample",
+      "heavyDays": 4,
+      "meetings": 7
+    },
+    {
+      "email": "jordan.fixture@example.com",
+      "name": null,
+      "heavyDays": 2,
+      "meetings": 3
+    }
+  ],
+  "series": [
+    {
+      "day": "2026-11-18",
+      "meetingCount": 4,
+      "meetingHours": 3.0,
+      "afterHours": 0,
+      "recovery": 66,
+      "sleep": 80,
+      "strain": 10.2,
+      "nextRecovery": 71
+    },
+    {
+      "day": "2026-11-19",
+      "meetingCount": 3,
+      "meetingHours": 2.0,
+      "afterHours": 0,
+      "recovery": 71,
+      "sleep": 80,
+      "strain": 10.2,
+      "nextRecovery": 48
+    },
+    {
+      "day": "2026-11-20",
+      "meetingCount": 5,
+      "meetingHours": 4.0,
+      "afterHours": 1,
+      "recovery": null,
+      "sleep": 80,
+      "strain": 10.2,
+      "nextRecovery": 81
+    },
+    {
+      "day": "2026-11-21",
+      "meetingCount": 0,
+      "meetingHours": 0.0,
+      "afterHours": 0,
+      "recovery": 81,
+      "sleep": 80,
+      "strain": 10.2,
+      "nextRecovery": 74
+    },
+    {
+      "day": "2026-11-22",
+      "meetingCount": 0,
+      "meetingHours": 0.0,
+      "afterHours": 0,
+      "recovery": 74,
+      "sleep": 80,
+      "strain": 10.2,
+      "nextRecovery": 69
+    },
+    {
+      "day": "2026-11-23",
+      "meetingCount": 3,
+      "meetingHours": 2.5,
+      "afterHours": 0,
+      "recovery": 69,
+      "sleep": 80,
+      "strain": 10.2,
+      "nextRecovery": 72
+    },
+    {
+      "day": "2026-11-24",
+      "meetingCount": 5,
+      "meetingHours": 4.0,
+      "afterHours": 1,
+      "recovery": 72,
+      "sleep": 80,
+      "strain": 10.2,
+      "nextRecovery": null
+    }
+  ],
+  "hits": [
+    {
+      "kind": "meeting",
+      "id": "m-pipeline",
+      "day": "2026-11-20",
+      "title": "Pipeline review",
+      "startLocal": "2026-11-20T10:30:00-05:00",
+      "afterHours": false,
+      "earlyStart": false,
+      "meetingKind": "client",
+      "sentence": "Heart rate ran well above your usual for 37 minutes.",
+      "badge": "worse than usual",
+      "impact": 41.2,
+      "compare": [
+        {
+          "key": "nextReadiness",
+          "label": "Next-morning recovery",
+          "value": 44,
+          "median": 68,
+          "delta": -24,
+          "worse": true
+        }
+      ],
+      "hrStress": {
+        "coverage": "ok",
+        "source": "WHOOP",
+        "gaps": [],
+        "method": "heartrate_proxy",
+        "methodNote": "WHOOP heart rate inside the meeting window.",
+        "sampleCount": 48,
+        "meanBpm": 91,
+        "maxBpm": 112,
+        "dayAwakeMeanBpm": 72,
+        "restingBpm": 55,
+        "elevatedThresholdBpm": 80,
+        "elevatedPct": 62,
+        "elevatedMinutes": 37,
+        "meanVsAwake": 19,
+        "zone": "high",
+        "headline": "Elevated",
+        "story": "Elevated: heart rate averaged 91 bpm.",
+        "impact": 41.2,
+        "series": [
+          {
+            "t": "2026-11-20T15:42:00.000Z",
+            "bpm": 90.0,
+            "minutes": 1
+          },
+          {
+            "t": "2026-11-20T15:46:00.000Z",
+            "bpm": 96.5,
+            "minutes": 1
+          },
+          {
+            "t": "2026-11-20T15:51:00.000Z",
+            "bpm": 101.9,
+            "minutes": 1
+          },
+          {
+            "t": "2026-11-20T15:55:00.000Z",
+            "bpm": 102.3,
+            "minutes": 1
+          },
+          {
+            "t": "2026-11-20T15:59:00.000Z",
+            "bpm": 103.2,
+            "minutes": 1
+          },
+          {
+            "t": "2026-11-20T16:04:00.000Z",
+            "bpm": 101.6,
+            "minutes": 1
+          },
+          {
+            "t": "2026-11-20T16:08:00.000Z",
+            "bpm": 95.1,
+            "minutes": 1
+          },
+          {
+            "t": "2026-11-20T16:13:00.000Z",
+            "bpm": 90.5,
+            "minutes": 1
+          },
+          {
+            "t": "2026-11-20T16:17:00.000Z",
+            "bpm": 86.0,
+            "minutes": 1
+          },
+          {
+            "t": "2026-11-20T16:21:00.000Z",
+            "bpm": 79.8,
+            "minutes": 1
+          },
+          {
+            "t": "2026-11-20T16:26:00.000Z",
+            "bpm": 78.6,
+            "minutes": 1
+          },
+          {
+            "t": "2026-11-20T16:30:00.000Z",
+            "bpm": 79.9,
+            "minutes": 1
+          }
+        ],
+        "partial": {
+          "fromUtc": "2026-11-20T15:42:00.000Z",
+          "toUtc": "2026-11-20T16:30:00.000Z",
+          "lateStart": true,
+          "earlyEnd": false
+        }
+      },
+      "attendees": [
+        {
+          "email": "me@example.com",
+          "self": true,
+          "name": "Me Example"
+        },
+        {
+          "email": "dana.sample@example.com",
+          "self": false,
+          "name": "Dana Sample"
+        },
+        {
+          "email": "riley.demo@example.com",
+          "self": false,
+          "name": "Riley Demo"
+        }
+      ],
+      "attendeeNote": null,
+      "sourceType": "calendar"
+    }
+  ],
+  "baselineNote": "Compared with your other meetings over the past 14 days."
+}

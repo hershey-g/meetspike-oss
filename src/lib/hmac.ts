@@ -2,9 +2,45 @@ import { bytesToHex } from "./hash.ts";
 
 export const OURA_SIGNATURE_HEADER = "x-oura-signature";
 export const OURA_TIMESTAMP_HEADER = "x-oura-timestamp";
+export const WHOOP_SIGNATURE_HEADER = "x-whoop-signature";
+export const WHOOP_TIMESTAMP_HEADER = "x-whoop-signature-timestamp";
 export const DEFAULT_REPLAY_WINDOW_S = 300;
 
 export type HmacVerifyResult = { ok: true } | { ok: false; status: 401; reason: string };
+
+/** WHOOP signs timestamp + raw body, with a millisecond timestamp and base64 MAC. */
+export async function verifyWhoopSignature(opts: {
+  secret: string;
+  signature: string | null;
+  timestamp: string | null;
+  rawBody: string;
+  nowMs?: number;
+}): Promise<HmacVerifyResult> {
+  const { secret, signature, timestamp, rawBody } = opts;
+  if (!secret || !signature || !timestamp) {
+    return { ok: false, status: 401, reason: "missing signing configuration or headers" };
+  }
+  const ts = Number(timestamp);
+  if (!/^\d+$/.test(timestamp) || !Number.isSafeInteger(ts)) {
+    return { ok: false, status: 401, reason: "invalid timestamp" };
+  }
+  if (Math.abs((opts.nowMs ?? Date.now()) - ts) > DEFAULT_REPLAY_WINDOW_S * 1000) {
+    return { ok: false, status: 401, reason: "timestamp outside replay window" };
+  }
+  // Canonical base64 for 32 bytes has two zero padding bits and one '='.
+  if (!/^[A-Za-z0-9+/]{42}[AEIMQUYcgkosw048]=$/.test(signature)) {
+    return { ok: false, status: 401, reason: "invalid signature encoding" };
+  }
+  const encoder = new TextEncoder();
+  const bytes = Uint8Array.from(atob(signature), (char) => char.charCodeAt(0));
+  const key = await crypto.subtle.importKey(
+    "raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["verify"],
+  );
+  if (!(await crypto.subtle.verify("HMAC", key, bytes, encoder.encode(`${timestamp}${rawBody}`)))) {
+    return { ok: false, status: 401, reason: "signature mismatch" };
+  }
+  return { ok: true };
+}
 
 /**
  * Oura signs `timestamp + rawBody` with HMAC-SHA256 of the OAuth client secret.

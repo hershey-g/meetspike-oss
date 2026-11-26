@@ -4,6 +4,7 @@ import { isEarlyStart, type DayLoad, type JoinedMeeting, type OuraDaySlice } fro
 import { thinHrSeries, type DayHrPoint, type MeetingHrStress } from "../../lib/heartrate.ts";
 import { attendeesIdentityNote, otherAttendees, parseAttendeesJson, type Attendee } from "../../lib/people.ts";
 import { normalizeSourceType, type EventSourceType } from "../../lib/source-type.ts";
+import { overrideJson } from "../../lib/meeting-override.ts";
 
 const KIND_WEIGHT: Record<string, number> = {
   client: 1,
@@ -54,6 +55,10 @@ export type MeetingJson = {
   sourceType: EventSourceType;
   syncReason: string | null;
   hasTranscript: boolean;
+  /** The owner's choices (see src/lib/meeting-override.ts). Only present when the meeting has any. */
+  override?: NonNullable<ReturnType<typeof overrideJson>>;
+  /** Not joined or not linked: listed so it can be undone, with no heart rate, score or flags. */
+  excluded?: true;
 };
 
 /** Person history: drop unused join fields and shrink the HR sparkline. */
@@ -89,6 +94,7 @@ export type DayBriefing = {
   summary: string;
   /** Downsampled ring HR for the selected local day. */
   hr: {
+    source: "Oura";
     method: "heartrate_proxy";
     methodNote: string;
     series: DayHrPoint[];
@@ -211,6 +217,56 @@ export function toMeetingJson(row: JoinedMeeting, score: number, hrStress: Meeti
     sourceType: normalizeSourceType(row.event.source_type),
     syncReason: row.event.sync_reason ?? null,
     hasTranscript: Boolean(row.event.has_transcript),
+    ...overrideFields(row.event),
+  };
+}
+
+function overrideFields(event: CalendarEventRow): Pick<MeetingJson, "override" | "excluded"> {
+  const override = overrideJson(event.override);
+  if (!override) return {};
+  return {
+    override,
+    ...(event.override?.excluded ? { excluded: true as const } : {}),
+  };
+}
+
+/** A meeting left out (not joined, not linked): in the day's list so it can be undone, but never scored or counted. */
+export function toExcludedMeetingJson(event: CalendarEventRow): MeetingJson {
+  return {
+    id: event.id,
+    title: event.title,
+    kind: event.kind,
+    day: event.day,
+    startUtc: event.start_utc,
+    endUtc: event.end_utc,
+    startLocal: event.start_local,
+    endLocal: event.end_local,
+    afterHours: Boolean(event.after_hours),
+    earlyStart: eventEarly(event),
+    attendeeCount: event.attendee_count,
+    durationS: event.duration_s,
+    ouraMorningDay: ouraMorningDay(event.day),
+    signals: {
+      stressHighS: null,
+      recoveryHighS: null,
+      stressSummary: null,
+      stressSource: "none",
+      readinessProxy: null,
+      nextSleepScore: null,
+      nextReadinessScore: null,
+      nextHrv: null,
+      nextLowestHr: null,
+      nextTotalSleepS: null,
+    },
+    score: 0,
+    flags: [],
+    hrStress: null,
+    attendees: otherAttendees(parseAttendeesJson(event.attendees_json)),
+    attendeeNote: attendeesIdentityNote(parseAttendeesJson(event.attendees_json)),
+    sourceType: normalizeSourceType(event.source_type),
+    syncReason: event.sync_reason ?? null,
+    hasTranscript: Boolean(event.has_transcript),
+    ...overrideFields(event),
   };
 }
 
@@ -299,6 +355,7 @@ export type BriefingLabels = {
   strain: string | null;
   /** False when the wearable has no heart-rate fine enough to slice per meeting. */
   intradayHr: boolean;
+  hrProvider?: string | null;
 };
 
 export const DEFAULT_BRIEFING_LABELS: BriefingLabels = {
@@ -332,6 +389,7 @@ export function composeDaySummary(b: {
     parts.push(`${head} — ${cal.eventCount} ${noun} (${bits.join("; ")}).`);
   }
 
+  if (!labels.provider) return parts.join(" ");
   const prior = b.priorNight;
   if (prior?.sleepScore != null || prior?.readinessScore != null) {
     const scores: string[] = [];
@@ -383,6 +441,8 @@ export function buildDayBriefing(opts: {
   hrSeries?: DayHrPoint[];
   hrMethodNote?: string;
   labels?: BriefingLabels;
+  /** Meetings left out for this day. Listed after the others, never counted. */
+  excluded?: CalendarEventRow[];
 }): DayBriefing {
   const { date, timeZone, joined, priorNight, nextMorning } = opts;
   const onDay = joined.filter((j) => calendarDayInZone(j.event.start_utc, timeZone) === date);
@@ -406,11 +466,13 @@ export function buildDayBriefing(opts: {
   if (nextMorning?.sleepScore != null && nextMorning.sleepScore < SLEEP_HIT) flags.push("low_next_sleep");
   if (priorNight?.stressSummary === "stressful") flags.push("stressful_day");
 
+  const provider = (opts.labels ?? DEFAULT_BRIEFING_LABELS).provider;
   const join = {
     workDay: date,
     priorNightOuraDay: date,
     nextMorningOuraDay: onDay[0]?.signals.ouraMorningDay ?? ouraMorningDay(date),
-    note: `Calendar load is work day D. Prior-night ${(opts.labels ?? DEFAULT_BRIEFING_LABELS).provider} is morning D (woke that day). Nights×work correlation uses ${(opts.labels ?? DEFAULT_BRIEFING_LABELS).provider} morning D+1.`,
+    note: provider ? `Calendar load is work day D. Prior-night ${provider} is morning D (woke that day). Nights×work correlation uses ${provider} morning D+1.`
+      : "Calendar load is grouped by local start day.",
   };
   const calendar = {
     ...load,
@@ -421,7 +483,13 @@ export function buildDayBriefing(opts: {
         const bh = b.hrStress?.coverage === "ok" ? (b.hrStress.impact ?? 0) : -1;
         if (bh !== ah) return bh - ah;
         return a.startUtc.localeCompare(b.startUtc);
-      }),
+      })
+      .concat(
+        (opts.excluded ?? [])
+          .filter((event) => calendarDayInZone(event.start_utc, timeZone) === date)
+          .sort((a, b) => a.start_utc.localeCompare(b.start_utc) || a.id.localeCompare(b.id))
+          .map(toExcludedMeetingJson),
+      ),
   };
   return {
     ok: true,
@@ -435,6 +503,7 @@ export function buildDayBriefing(opts: {
     summary: composeDaySummary({ date, calendar, priorNight, nextMorning, join, labels: opts.labels }),
     hr: opts.hrSeries
       ? {
+          source: "Oura" as const,
           method: "heartrate_proxy",
           methodNote: opts.hrMethodNote ?? GRAIN_NOTE.stress,
           series: opts.hrSeries,
@@ -471,6 +540,7 @@ export type WeekBriefing = {
     watching: number;
     restored: number;
     noHr: number;
+    combinedHr?: number;
     hardest: WeekHardest | null;
     line: string;
   };
@@ -490,6 +560,7 @@ export function composeWeekSummary(opts: {
   watching: number;
   restored: number;
   noHr: number;
+  combinedHr?: number;
   hardest: WeekHardest | null;
   /** False when the wearable has no heart-rate fine enough to slice per meeting. */
   intradayHr?: boolean;
@@ -501,7 +572,7 @@ export function composeWeekSummary(opts: {
     return `${opts.meetingCount} ${opts.meetingCount === 1 ? "meeting" : "meetings"} this week, ${hours} ${hours === 1 ? "hour" : "hours"} in total.`;
   }
   const withHr = opts.elevated + opts.watching + opts.restored;
-  if (withHr === 0) {
+  if (withHr === 0 && !opts.combinedHr) {
     return `${opts.meetingCount} ${opts.meetingCount === 1 ? "meeting" : "meetings"} this week. No ring HR in those windows — we will not invent a signal.`;
   }
   const bits = [
@@ -509,6 +580,7 @@ export function composeWeekSummary(opts: {
     `${opts.watching} worth watching`,
     `${opts.restored} restored`,
   ];
+  if (opts.combinedHr) bits.push(`${opts.combinedHr} with WHOOP + Oura heart rate`);
   let line = `${bits.join(", ")} this week.`;
   if (opts.hardest) {
     const when = formatBriefingDay(opts.hardest.day);
@@ -541,12 +613,14 @@ export function buildWeekBriefing(opts: {
   let watching = 0;
   let restored = 0;
   let noHr = 0;
+  let combinedHr = 0;
   let hardestJson: MeetingJson | null = null;
   for (const m of meetings) {
     const bucket = zoneBucket(m.hrStress);
     if (bucket === "elevated") elevated += 1;
     else if (bucket === "watching") watching += 1;
     else if (bucket === "restored") restored += 1;
+    else if (m.hrStress?.coverage === "ok") combinedHr += 1;
     else noHr += 1;
     if (bucket === "elevated" || bucket === "watching") {
       const impact = m.hrStress?.impact ?? 0;
@@ -588,6 +662,7 @@ export function buildWeekBriefing(opts: {
       watching,
       restored,
       noHr,
+      ...(combinedHr ? { combinedHr } : {}),
       hardest,
       line: composeWeekSummary({
         meetingCount: meetings.length,
@@ -595,6 +670,7 @@ export function buildWeekBriefing(opts: {
         watching,
         restored,
         noHr,
+        combinedHr,
         hardest,
         intradayHr: opts.intradayHr,
         totalDurationS: meetings.reduce((s, m) => s + m.durationS, 0),
@@ -616,12 +692,18 @@ export const GRAIN_NOTE = {
 
 /** The same notes, worded for the active wearable. With no labels this is `GRAIN_NOTE`. */
 export function grainNote(labels: BriefingLabels = DEFAULT_BRIEFING_LABELS): Record<keyof typeof GRAIN_NOTE, string> {
-  if (labels.intradayHr && labels.provider === DEFAULT_BRIEFING_LABELS.provider) return GRAIN_NOTE;
+  if (!labels.provider) return {
+    ...GRAIN_NOTE,
+    join: "Meetings are grouped by local start day.",
+    stress: "Wearable display is off.",
+    range: "A date range is inclusive local days.",
+  };
+  if (labels.intradayHr && labels.provider === DEFAULT_BRIEFING_LABELS.provider && (!labels.hrProvider || labels.hrProvider === "Oura")) return GRAIN_NOTE;
   return {
     ...GRAIN_NOTE,
     join: `work day D → ${labels.provider} sleep/${labels.readiness} on morning D+1`,
     stress: labels.intradayHr
-      ? `Stress during a meeting uses heart-rate from your ${labels.provider} in that window. If it saved nothing, we say so.`
+      ? `Stress during a meeting uses heart-rate from ${labels.hrProvider ?? labels.provider} in that window. If it saved nothing, we say so.`
       : `${labels.provider} does not share heart rate during the day, so there is no per-meeting stress reading. Days are compared by ${labels.readiness}${labels.strain ? `, ${labels.strain}` : ""} and meeting load.`,
   };
 }

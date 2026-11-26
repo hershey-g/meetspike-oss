@@ -1,0 +1,4 @@
+{
+  "error": "Google Calendar is not connected — connect it at /auth/google/start",
+  "needsGoogle": true
+}

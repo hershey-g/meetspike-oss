@@ -29,12 +29,47 @@ GOOGLE_CLIENT_SECRET=
 # Optional. Oura only: true reads Oura's sandbox data instead of your own.
 # OURA_SANDBOX=true
 
+# Optional. WHOOP only: per-meeting heart rate from the Bluetooth apps.
+# Off unless set to "enabled". Needs migrations 0010 and 0012.
+# WHOOP_WEB_HR=enabled
+
 # Optional. Default UI title is Meetspike.
 # DISPLAY_TITLE=Meetspike
 
 # Admin ingest for POST /api/plaud/ingest. Not a Plaud token.
 # INGEST_ADMIN_SECRET=
 
+# Cloudflare Access, checked by the Worker itself before it makes an iPhone
+# setup code (POST /api/pair/start). Without both, pairing is refused
+# (except under `wrangler dev` on http://localhost). Not secrets.
+# Team domain: Zero Trust > Settings > Custom Pages (or Team name), as
+#   https://<team-name>.cloudflareaccess.com
+# AUD: Zero Trust > Access > Applications > your app covering /api/* >
+#   Overview (or Basic information) > Application Audience (AUD) Tag.
+#   Comma-separate several if more than one app covers /api/*.
+# ACCESS_TEAM_DOMAIN=
+# ACCESS_AUD=
+
+# Optional. Cloudflare Access service token handed to the iPhone when it
+# scans a setup code (setup step 8). Leave unset to type it on the phone.
+# PHONE_ACCESS_CLIENT_ID=
+# PHONE_ACCESS_CLIENT_SECRET=
+
+# Optional. Pushover push for "turn on WHOOP Heart Rate Broadcast" reminders
+# from the Mac app (POST /api/whoop-web/reminder). Set as Worker secrets.
+# PUSHOVER_TOKEN=
+# PUSHOVER_USER=
+
 # Optional. Turns on "Ask your data": 32+ random characters used to encrypt
 # your own Claude API key at rest. The key itself is pasted in the app.
 # AI_KEY_SECRET=
+
+# Optional. Apple push (APNs) for "turn on HR Broadcast" reminders that only
+# come when no heart rate is arriving (every-minute cron, needs the iPhone
+# build 11). Set as Worker secrets. Without the first three the phone keeps
+# its own local reminders. The key is the .p8 (PKCS8 PEM; real newlines or
+# literal \n both work). Keep it in 1Password, never in git.
+# APNS_KEY_P8=
+# APNS_KEY_ID=
+# APNS_TEAM_ID=
+# APNS_TOPIC=com.hersheyg.meetspike.hr

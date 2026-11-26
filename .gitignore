@@ -20,3 +20,19 @@ credentials.json
 service-account*.json
 *serviceaccount*.json
 .mf/
+# codebox2 WHOOP session cache (lives in ~/.local/state/meetspike/ by default).
+whoop-web-session*.json
+codebox/*.env
+
+# Native HR build output
+.build/
+ios/MeetspikeHR/MeetspikeHR.xcodeproj/
+
+# hg-dev-team
+.claude/hg-dev-team/
+.claude/worktrees/
+.claude/settings.local.json
+.hg-track
+.hg-gate.log
+.hg-gate-result.json
+.hg-gate-attempts*

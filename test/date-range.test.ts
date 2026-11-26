@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
-  RANGE_MAX_SPAN_DAYS,
   daysInRange,
+  historyDays,
   isValidDay,
   parseDateRange,
   spanDays,
@@ -75,18 +75,11 @@ describe("parseDateRange — validation", () => {
 });
 
 describe("parseDateRange — span cap", () => {
-  it("caps at 92 inclusive days", () => {
-    assert.equal(RANGE_MAX_SPAN_DAYS, 92);
-    const start = "2026-08-01";
-    const atCap = addCalendarDays(start, RANGE_MAX_SPAN_DAYS - 1);
-    assert.deepEqual(parseDateRange({ start, end: atCap }, { today: TODAY }), {
-      start,
-      end: atCap,
-      spanDays: 92,
-    });
-    assert.deepEqual(parseDateRange({ start, end: addCalendarDays(atCap, 1) }, { today: TODAY }), {
-      error: "range cannot exceed 92 days (got 93)",
-    });
+  it("accepts multi-year ranges and keeps storage days in sparse results", () => {
+    const start = "2022-01-01";
+    const end = addCalendarDays(start, 1500);
+    assert.deepEqual(parseDateRange({ start, end }, { today: TODAY }), { start, end, spanDays: 1501 });
+    assert.deepEqual(historyDays("1900-01-01", end, ["2023-01-01", "1810-01-01"]), ["1900-01-01", "2023-01-01", end]);
   });
 
   it("honours a caller-supplied cap", () => {

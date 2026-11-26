@@ -1,0 +1,174 @@
+/* Ask your data pop-up (public/ask-panel.js). Uses the palette in app.css.
+   Phone: a full-screen sheet. 1024px and up: a floating panel bottom-right. */
+
+#askpanel { font-family: var(--font); color: var(--ink); }
+#askpanel button { font: inherit; color: inherit; cursor: pointer; }
+#askpanel svg { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
+.ask-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Launcher: desktop only. On a phone the tab bar's Ask button opens the sheet. */
+.ask-launch { display: none; }
+@media (min-width: 1024px) {
+  .ask-launch:not([hidden]) {
+    position: fixed; right: 28px; bottom: 28px; z-index: 45;
+    display: flex; align-items: center; gap: 10px;
+    height: 56px; padding: 0 18px 0 16px; border-radius: 28px;
+    border: 1px solid var(--line-2); background: var(--card); color: var(--ink);
+    font-size: 15px; font-weight: 600;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .ask-launch:hover { background: var(--card-2); border-color: var(--link); }
+  .ask-launch .ask-spark { width: 20px; height: 20px; stroke: var(--link); stroke-width: 2.2; }
+  .ask-launch kbd { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 12px; font-weight: 500; color: var(--muted); border: 1px solid var(--line-2); border-radius: 6px; padding: 2px 6px; }
+}
+
+/* Panel */
+.ask-panel {
+  position: fixed; inset: 0; z-index: 50;
+  display: flex; flex-direction: column;
+  background: #181c21;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+  animation: ask-up 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  outline: none;
+}
+.ask-panel[hidden] { display: none; }
+html.ask-open body { overflow: hidden; }
+@keyframes ask-up { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+@media (min-width: 1024px) {
+  html.ask-open body { overflow: visible; }
+  .ask-panel {
+    inset: auto 24px 24px auto;
+    width: 420px; height: 640px; max-width: calc(100vw - 48px); max-height: calc(100dvh - 48px);
+    padding: 0;
+    border: 1px solid var(--line-2); border-radius: 20px; overflow: hidden;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
+    transform-origin: bottom right;
+    transition: width 0.22s ease, height 0.22s ease;
+  }
+  .ask-panel.expanded { width: 760px; height: calc(100dvh - 48px); }
+  .ask-x { display: none !important; }
+}
+@media (max-width: 1023.98px) {
+  .ask-expand, .ask-min { display: none !important; }
+}
+
+.ask-head { flex: none; display: flex; align-items: center; gap: 4px; padding: 12px 12px 10px 18px; border-bottom: 1px solid var(--line); }
+.ask-titles { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ask-titles h2 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: 0; }
+.ask-scope { font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+.ask-pill { align-self: flex-start; margin-top: 6px; min-height: 32px; padding: 4px 14px; border-radius: 16px; border: 1px solid var(--line-2); background: none; color: var(--muted) !important; font-size: 13px !important; }
+.ask-pill:hover { border-color: var(--link); color: var(--ink) !important; }
+.ask-pill[aria-pressed="true"] { background: var(--link); border-color: var(--link); color: #0e1216 !important; font-weight: 600; }
+.ask-pill[hidden] { display: none; }
+.ask-icon { flex: none; width: 40px; height: 40px; border: 0; border-radius: 10px; background: none; color: var(--muted) !important; display: grid; place-items: center; }
+.ask-icon:hover { background: var(--card-2); color: var(--ink) !important; }
+.ask-icon svg { width: 18px; height: 18px; stroke-width: 1.6; }
+
+.ask-main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.ask-msgs { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 18px; display: flex; flex-direction: column; gap: 16px; }
+.ask-muted { margin: 0; color: var(--muted); font-size: 14px; }
+.ask-error { margin: 0; color: var(--bad); font-size: 14px; }
+.ask-note { margin: 0; color: var(--muted); font-size: 13px; }
+
+/* Empty state */
+.ask-empty { margin-top: auto; display: flex; flex-direction: column; gap: 10px; }
+.ask-empty > .ask-spark { width: 28px; height: 28px; stroke: var(--link); stroke-width: 2; }
+.ask-empty-h { margin: 0 0 4px; font-size: 20px; font-weight: 600; line-height: 1.3; }
+.ask-suggest { min-height: 44px; text-align: left; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line-2); background: #1a1f25; color: #c9d0d7 !important; font-size: 14px !important; }
+.ask-suggest:hover { border-color: var(--link); color: var(--ink) !important; }
+
+/* Turns */
+.ask-me { align-self: flex-end; max-width: 85%; background: var(--card-2); border-radius: 16px 16px 4px 16px; padding: 10px 14px; font-size: 15px; line-height: 1.45; overflow-wrap: anywhere; white-space: pre-wrap; }
+.ask-ai { display: flex; flex-direction: column; gap: 10px; }
+.ask-answer { font-size: 15px; line-height: 1.55; color: #e6e9ec; overflow-wrap: anywhere; }
+.ask-answer p { margin: 0 0 10px; }
+.ask-answer p:last-child { margin: 0; }
+.ask-answer ul { margin: 0 0 10px; padding-left: 18px; }
+/* Answer tables (3 columns at most) fill the panel and wrap: nothing scrolls sideways. */
+.ask-answer table { width: 100%; max-width: 100%; table-layout: fixed; border-collapse: collapse; margin: 4px 0 10px; font-size: 14px; }
+.ask-answer th, .ask-answer td { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; overflow-wrap: anywhere; word-break: break-word; }
+.ask-answer th:first-child, .ask-answer td:first-child { width: 40%; padding-left: 0; }
+.ask-answer th { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+/* Wider tables arrive as one card per row: label, then value. */
+.ask-cards { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 10px; }
+.ask-card { margin: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; display: grid; grid-template-columns: minmax(64px, 36%) minmax(0, 1fr); gap: 4px 10px; font-size: 14px; }
+.ask-card dt { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); padding-top: 2px; overflow-wrap: anywhere; }
+.ask-card dd { margin: 0; overflow-wrap: anywhere; }
+.ask-card dd.ask-wide { grid-column: 1 / -1; }
+
+/* What was ranked, under the answer */
+.ask-range { margin: 0; font-size: 12px; color: var(--muted); }
+.ask-alltime { align-self: flex-start; }
+
+/* Thinking */
+.ask-thinking { display: flex; align-items: center; gap: 10px; min-height: 24px; }
+.ask-spin { display: inline-flex; }
+.ask-spin .ask-spark { width: 20px; height: 20px; stroke: var(--link); stroke-width: 2.2; animation: ask-rot 2.4s linear infinite; }
+.ask-verb {
+  font-size: 15px; font-weight: 500;
+  background: linear-gradient(90deg, var(--muted) 0%, var(--muted) 35%, var(--ink) 50%, var(--muted) 65%, var(--muted) 100%);
+  background-size: 220% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: ask-shimmer 1.8s linear infinite;
+}
+.ask-elapsed { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 12px; color: var(--muted); }
+.ask-steps { list-style: none; margin: 0 0 0 9px; padding: 0 0 0 19px; border-left: 1px solid var(--line-2); display: flex; flex-direction: column; gap: 8px; }
+.ask-steps li { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink); }
+.ask-steps li.done { color: var(--muted); }
+.ask-check { flex: none; width: 14px; height: 14px; stroke: var(--good) !important; stroke-width: 1.8; }
+.ask-dot { flex: none; width: 8px; height: 8px; margin: 0 3px; border-radius: 50%; background: var(--link); animation: ask-breathe 1s ease-in-out infinite; }
+.ask-dot.idle { background: var(--faint); animation: none; }
+
+.ask-thought { align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; min-height: 32px; padding: 4px 10px 4px 6px; border: 0; border-radius: 8px; background: none; color: var(--muted) !important; font-size: 13px !important; }
+.ask-thought:hover { background: var(--card); color: var(--ink) !important; }
+.ask-thought .ask-spark { width: 16px; height: 16px; stroke: var(--link); stroke-width: 2.2; }
+.ask-chev { width: 12px; height: 12px; stroke-width: 1.5; }
+
+.ask-caret { display: inline-block; width: 7px; height: 15px; margin-left: 2px; vertical-align: -2px; background: var(--link); animation: ask-blink 0.9s steps(1) infinite; }
+
+.ask-stopped { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.ask-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 4px 10px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--card); color: var(--muted); font-size: 13px; }
+.ask-chip.btn { background: none; color: var(--ink) !important; font-size: 13px !important; }
+.ask-chip.btn:hover { border-color: var(--link); }
+.ask-chip svg { width: 14px; height: 14px; stroke-width: 1.8; }
+.ask-square { width: 8px; height: 8px; border-radius: 2px; background: var(--muted); }
+
+/* Composer */
+.ask-composer { flex: none; display: flex; flex-direction: column; gap: 2px; padding: 12px 14px calc(10px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); }
+.ask-field { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; background: #1a1f25; border: 1px solid var(--line-2); border-radius: 14px; padding: 6px 6px 6px 14px; }
+.ask-field:focus-within { border-color: var(--link); }
+.ask-field input { flex: 1; min-width: 0; height: 40px; border: 0; background: none; color: var(--ink); font-size: max(16px, 15px); outline: none; }
+.ask-field input::placeholder { color: var(--muted); }
+.ask-send, .ask-stop { flex: none; width: 40px; height: 40px; border: 0; border-radius: 12px; display: grid; place-items: center; }
+.ask-send { background: var(--link); color: #0e1216 !important; }
+.ask-send:hover { background: #9fd0f8; }
+.ask-send svg { width: 18px; height: 18px; stroke-width: 2.2; }
+.ask-stop { background: #d9dde1; }
+.ask-stop:hover { background: var(--ink); }
+.ask-stop span { width: 12px; height: 12px; border-radius: 3px; background: var(--bg); }
+.ask-foot { margin: 0; padding: 0 4px; font-size: 12px; color: var(--muted); }
+.ask-link { display: inline; min-height: 0; padding: 0; border: 0; background: none; color: var(--link) !important; font-size: inherit !important; text-decoration: underline; }
+
+/* Key setup */
+.ask-setup { gap: 14px; font-size: 15px; }
+.ask-setup p { margin: 0; color: var(--muted); }
+.ask-pre { margin: 0; padding: 12px 14px; background: var(--card); border-radius: 12px; overflow-x: auto; }
+.ask-kicker { font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.ask-keyform { display: flex; flex-direction: column; gap: 10px; }
+.ask-keyform input { height: 52px; padding: 0 14px; border-radius: 14px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font-size: 16px; }
+.ask-primary { height: 52px; border: 0; border-radius: 14px; background: var(--ink); color: var(--bg) !important; font-weight: 700; font-size: 16px; }
+.ask-primary:disabled { background: var(--card-2); color: var(--muted) !important; }
+.ask-share { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; background: var(--card); border-radius: 14px; font-size: 14px; }
+
+@keyframes ask-rot { to { transform: rotate(360deg); } }
+@keyframes ask-breathe { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
+@keyframes ask-shimmer { 0% { background-position: 120% 0; } 100% { background-position: -120% 0; } }
+@keyframes ask-blink { 50% { opacity: 0; } }
+.ask-spin .ask-spark { transform-origin: 50% 50%; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ask-panel { animation: none; transition: none; }
+  .ask-spin .ask-spark, .ask-dot, .ask-caret { animation: none; }
+  .ask-verb { animation: none; background: none; color: var(--ink); }
+}

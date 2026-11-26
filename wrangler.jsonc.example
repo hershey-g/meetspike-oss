@@ -3,7 +3,7 @@
 // wrangler.production.jsonc, which git ignores. Do not put real ids here.
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "meetspike",
+  "name": "hg-biometrics",
   "main": "./src/index.ts",
   "compatibility_date": "2026-08-25",
   "compatibility_flags": ["nodejs_compat"],
@@ -20,54 +20,69 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "meetspike-db",
+      "database_name": "hg-biometrics-db",
       "database_id": "REPLACE_D1_DATABASE_ID"
     }
   ],
 
   "r2_buckets": [
-    { "binding": "RAW", "bucket_name": "meetspike-raw" }
+    { "binding": "RAW", "bucket_name": "hg-biometrics-raw" }
   ],
 
   "kv_namespaces": [
     { "binding": "TOKENS", "id": "REPLACE_KV_NAMESPACE_ID" }
   ],
 
+  "durable_objects": {
+    "bindings": [{ "name": "LIVE_HR", "class_name": "LiveHeartRate" }]
+  },
+  "migrations": [{ "tag": "live-hr-v1", "new_sqlite_classes": ["LiveHeartRate"] }],
+
   "queues": {
-    "producers": [{ "binding": "INGEST_Q", "queue": "meetspike-ingest" }],
+    "producers": [{ "binding": "INGEST_Q", "queue": "hg-biometrics-ingest" }],
     "consumers": [
       {
-        "queue": "meetspike-ingest",
+        "queue": "hg-biometrics-ingest",
         "max_batch_size": 10,
         "max_batch_timeout": 5,
         "max_retries": 5,
-        "dead_letter_queue": "meetspike-ingest-dlq"
+        "dead_letter_queue": "hg-biometrics-ingest-dlq"
       }
     ]
   },
 
   "workflows": [
     {
-      "name": "meetspike-backfill",
+      "name": "hg-biometrics-backfill",
       "binding": "BACKFILL",
       "class_name": "OuraBackfillWorkflow"
     },
     {
-      "name": "meetspike-reconcile",
+      "name": "hg-biometrics-reconcile",
       "binding": "RECONCILE",
       "class_name": "NightlyReconcileWorkflow",
       "schedules": ["0 11 * * *"]
     }
   ],
 
+  // Incremental Google Calendar sync every 15 minutes (src/index.ts `scheduled`).
+  // Cron triggers are not routes and touch no DNS.
+  // The second cron is the every-minute reminder push tick. Keep it in step with PUSH_CRON in
+  // src/sources/whoop-web/push.ts and the --triggers list in .github/workflows/deploy.yml.
+  "triggers": { "crons": ["*/15 * * * *", "* * * * *"] },
+
   "observability": { "enabled": true },
 
-  // WEARABLE picks the data source: "whoop" or "oura".
+  // WEARABLE picks the primary score source: "whoop" or "oura".
   // It is deliberately not set in this template. When it is not set, an
   // install that already has Oura keys keeps using Oura, and anything else
   // uses WHOOP. `npm run setup` writes it for a new install; you can also set
   // it as a secret (`wrangler secret put WEARABLE`) or in .dev.vars locally.
+  // WHOOP_WEB_HR: "enabled" turns on per-meeting WHOOP heart rate from the
+  // Bluetooth apps (needs migrations 0010 and 0012). Off by default. This
+  // build has no WHOOP private-API code.
   "vars": {
-    "OURA_SANDBOX": "true"
+    "OURA_SANDBOX": "true",
+    "WHOOP_WEB_HR": "off"
   }
 }

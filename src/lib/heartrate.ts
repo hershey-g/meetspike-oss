@@ -21,15 +21,20 @@ export type HrSample = {
 };
 
 export type MeetingHrZone = "low" | "moderate" | "high";
+export type MeetingHrSource = "WHOOP" | "Oura" | "WHOOP + Oura";
+export type HrGap = [startMs: number, endMs: number];
 
 export type DayHrPoint = {
   t: string;
   bpm: number;
   minutes: number;
+  source?: Exclude<MeetingHrSource, "WHOOP + Oura">;
 };
 
 export type MeetingHrStress = {
   coverage: "ok" | "none";
+  source?: MeetingHrSource;
+  gaps?: HrGap[];
   method: typeof HR_METHOD;
   methodNote: string;
   sampleCount: number;
@@ -48,6 +53,12 @@ export type MeetingHrStress = {
   impact: number;
   /** Downsampled ring HR inside the meeting window. Empty when coverage is none. */
   series: DayHrPoint[];
+  /**
+   * Set when heart rate covers only part of the meeting (strap broadcast
+   * started late or stopped early): first and last reading inside it.
+   * Absent or null when the whole meeting is covered.
+   */
+  partial?: { fromUtc: string; toUtc: string; lateStart: boolean; earlyEnd: boolean } | null;
 };
 
 function asRecord(doc: unknown): Record<string, unknown> | null {
@@ -113,7 +124,40 @@ export function samplesInWindow(samples: HrSample[], startUtc: string, endUtc: s
   const start = Date.parse(startUtc);
   const end = Date.parse(endUtc);
   if (!Number.isFinite(start) || !Number.isFinite(end)) return [];
-  return samples.filter((s) => s.timestampMs >= start && s.timestampMs <= end);
+  return samples.filter((s) => s.timestampMs >= start && s.timestampMs < end);
+}
+
+/** Use each device's sampling cadence to identify missing sections of a meeting. */
+export function meetingHrCoverage(
+  hr: MeetingHrStress,
+  times: number[],
+  startMs: number,
+  endMs: number,
+  source: "WHOOP" | "Oura",
+): MeetingHrStress {
+  if (!times.length) return hr;
+  const tolerance = (source === "WHOOP" ? 3 : 5) * 60_000;
+  const maxSpacing = (source === "WHOOP" ? 3 : 10) * 60_000;
+  const first = times[0];
+  const last = times[times.length - 1];
+  const lateStart = first - startMs > tolerance;
+  const earlyEnd = endMs - last > tolerance;
+  const gaps: HrGap[] = [];
+  if (lateStart) gaps.push([startMs, first - maxSpacing / 2]);
+  for (let i = 1; i < times.length; i++) {
+    if (times[i] - times[i - 1] > maxSpacing) {
+      gaps.push([times[i - 1] + maxSpacing / 2, times[i] - maxSpacing / 2]);
+    }
+  }
+  if (earlyEnd) gaps.push([last + maxSpacing / 2, endMs]);
+  return {
+    ...hr,
+    source,
+    gaps,
+    partial: gaps.length
+      ? { fromUtc: new Date(first).toISOString(), toUtc: new Date(last).toISOString(), lateStart, earlyEnd }
+      : null,
+  };
 }
 
 export function samplesOnLocalDay(samples: HrSample[], day: string, timeZone = "America/New_York"): HrSample[] {
@@ -157,7 +201,12 @@ export function dayAwakeMeanBpm(daySamples: HrSample[]): number | null {
   return mean((pool.length ? pool : daySamples).map((s) => s.bpm));
 }
 
-function elevatedMinutesOf(windowSamples: HrSample[], threshold: number): number {
+/**
+ * `sampleMinutes` is the source's normal spacing: 5 for Oura (the default,
+ * unchanged), 1 for WHOOP's minute heart rate. A sample counts for at least
+ * half that and at most 10 minutes.
+ */
+function elevatedMinutesOf(windowSamples: HrSample[], threshold: number, sampleMinutes = 5): number {
   if (!windowSamples.length) return 0;
   const ordered = [...windowSamples].sort((a, b) => a.timestampMs - b.timestampMs);
   let minutes = 0;
@@ -165,8 +214,8 @@ function elevatedMinutesOf(windowSamples: HrSample[], threshold: number): number
     const cur = ordered[i];
     if (cur.bpm < threshold) continue;
     const next = ordered[i + 1];
-    const gapMin = next ? (next.timestampMs - cur.timestampMs) / 60_000 : 5;
-    minutes += Math.min(10, Math.max(2.5, gapMin));
+    const gapMin = next ? (next.timestampMs - cur.timestampMs) / 60_000 : sampleMinutes;
+    minutes += Math.min(10, Math.max(sampleMinutes / 2, gapMin));
   }
   return Math.round(minutes * 10) / 10;
 }
@@ -229,7 +278,10 @@ function plainHrStory(opts: {
   vsAwake: number | null;
   elevatedMinutes: number;
   sampleCount: number;
+  usualPhrase?: string;
+  sampleNoun?: string;
 }): string {
+  const usualPhrase = opts.usualPhrase ?? "your usual daytime average that day";
   const bits: string[] = [];
   if (opts.avgBpm != null) {
     bits.push(`Your heart averaged about ${Math.round(opts.avgBpm)} beats per minute in this meeting.`);
@@ -240,21 +292,34 @@ function plainHrStory(opts: {
   if (opts.vsAwake != null && opts.awakeMean != null) {
     const abs = Math.abs(Math.round(opts.vsAwake));
     const usual = Math.round(opts.awakeMean);
-    if (abs <= 1) bits.push(`About even with your usual daytime average that day (${usual}).`);
-    else if (opts.vsAwake > 0) bits.push(`About ${abs} above your usual daytime average that day (${usual}).`);
-    else bits.push(`About ${abs} below your usual daytime average that day (${usual}).`);
+    if (abs <= 1) bits.push(`About even with ${usualPhrase} (${usual}).`);
+    else if (opts.vsAwake > 0) bits.push(`About ${abs} above ${usualPhrase} (${usual}).`);
+    else bits.push(`About ${abs} below ${usualPhrase} (${usual}).`);
   }
   if (opts.elevatedMinutes > 0) {
-    bits.push(`About ${Math.round(opts.elevatedMinutes)} minutes ran higher than usual for that day.`);
+    bits.push(`About ${Math.round(opts.elevatedMinutes)} minutes ran higher than usual${opts.usualPhrase ? "" : " for that day"}.`);
   }
-  if (!bits.length) bits.push(`${opts.sampleCount} ring samples in this window.`);
+  if (!bits.length) bits.push(`${opts.sampleCount} ${opts.sampleNoun ?? "ring samples"} in this window.`);
   return bits.join(" ");
 }
+
+/** Defaults reproduce the Oura behaviour exactly. */
+export type ScoreHrOptions = {
+  /** Normal spacing of samples in minutes (Oura 5, WHOOP minute HR 1). */
+  sampleMinutes?: number;
+  /** What the baseline is called in the story. */
+  usualPhrase?: string;
+  /** What one sample is called in the story's fallback line. */
+  sampleNoun?: string;
+  /** Most points kept in `series`. */
+  seriesMax?: number;
+};
 
 export function scoreMeetingHr(
   windowSamples: HrSample[],
   daySamples: HrSample[],
   lowestHrHint?: number | null,
+  options: ScoreHrOptions = {},
 ): MeetingHrStress {
   if (!windowSamples.length) return noHrCoverage();
 
@@ -272,7 +337,7 @@ export function scoreMeetingHr(
   const elevated = threshold != null ? windowSamples.filter((s) => s.bpm >= threshold) : [];
   const elevatedPct =
     threshold != null ? Math.round((elevated.length / windowSamples.length) * 1000) / 10 : null;
-  const elevatedMin = threshold != null ? elevatedMinutesOf(windowSamples, threshold) : 0;
+  const elevatedMin = threshold != null ? elevatedMinutesOf(windowSamples, threshold, options.sampleMinutes ?? 5) : 0;
   const meanVsAwake =
     meanBpm != null && awakeMean != null ? Math.round((meanBpm - awakeMean) * 10) / 10 : null;
 
@@ -308,9 +373,11 @@ export function scoreMeetingHr(
       vsAwake: meanVsAwake,
       elevatedMinutes: elevatedMin,
       sampleCount: windowSamples.length,
+      usualPhrase: options.usualPhrase,
+      sampleNoun: options.sampleNoun,
     }),
     impact,
-    series: downsampleWindowHr(windowSamples),
+    series: downsampleWindowHr(windowSamples, options.seriesMax ?? MEETING_SERIES_MAX),
   };
 }
 
@@ -355,7 +422,8 @@ export function attachMeetingHr(
   };
   for (const m of meetings) {
     const window = samplesInWindow(samples, m.startUtc, m.endUtc);
-    out.set(m.id, scoreMeetingHr(window, daySamplesFor(m.day), lowestHrByDay.get(m.day) ?? null));
+    const hr = scoreMeetingHr(window, daySamplesFor(m.day), lowestHrByDay.get(m.day) ?? null);
+    out.set(m.id, meetingHrCoverage(hr, window.map((s) => s.timestampMs), Date.parse(m.startUtc), Date.parse(m.endUtc), "Oura"));
   }
   return out;
 }

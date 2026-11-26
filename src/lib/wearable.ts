@@ -1,3 +1,4 @@
+import { whoopWebHrFlag } from "../env.ts";
 import { SOURCE_OURA, SOURCE_WHOOP, type WearableSource } from "../types.ts";
 
 export type Wearable = WearableSource;
@@ -6,6 +7,7 @@ export const DEFAULT_WEARABLE: Wearable = SOURCE_WHOOP;
 
 type WearableEnv = {
   WEARABLE?: string;
+  WHOOP_WEB_HR?: string;
   OURA_CLIENT_ID?: string;
   WHOOP_CLIENT_ID?: string;
 };
@@ -22,7 +24,7 @@ export function parseWearable(raw: string | null | undefined): Wearable | null {
 }
 
 /**
- * Which wearable is the active source.
+ * Which wearable is the primary source for dashboard comparisons.
  *
  * 1. `WEARABLE=whoop|oura` decides, when set to a value we know.
  * 2. Unset (or unrecognised): an install that has Oura credentials and no WHOOP
@@ -56,6 +58,13 @@ export type WearableInfo = {
   label: string;
   /** True when the wearable shares heart-rate samples fine enough to slice per meeting. */
   hasIntradayHr: boolean;
+  /**
+   * Where per-meeting heart rate comes from: the Oura ring archive, WHOOP's
+   * web app API (WHOOP_WEB_HR, fetched per meeting and cached), or nowhere.
+   */
+  hrSource: "oura_ring" | "whoop_web" | null;
+  ouraHr: boolean;
+  whoopWebHr: boolean;
   /** What the morning 0–100 score is called ("Readiness", "Recovery"). */
   readinessLabel: string;
   /** What whole-day exertion is called, or null when the wearable has none. */
@@ -72,6 +81,9 @@ const OURA_INFO: WearableInfo = {
   source: SOURCE_OURA,
   label: "Oura",
   hasIntradayHr: true,
+  hrSource: "oura_ring",
+  ouraHr: true,
+  whoopWebHr: false,
   readinessLabel: "Readiness",
   strainLabel: null,
   strainMax: null,
@@ -83,6 +95,9 @@ const WHOOP_INFO: WearableInfo = {
   source: SOURCE_WHOOP,
   label: "WHOOP",
   hasIntradayHr: false,
+  hrSource: null,
+  ouraHr: false,
+  whoopWebHr: false,
   readinessLabel: "Recovery",
   strainLabel: "Strain",
   strainMax: 21,
@@ -92,10 +107,31 @@ const WHOOP_INFO: WearableInfo = {
     "Instead, each day shows how recovered you woke up and how much strain the day added, next to how many meetings you had.",
 };
 
-export function wearableInfo(source: Wearable): WearableInfo {
-  return source === SOURCE_WHOOP ? WHOOP_INFO : OURA_INFO;
+/** WHOOP with WHOOP_WEB_HR on: minute heart rate per meeting from WHOOP's web app API. */
+const WHOOP_WEB_INFO: WearableInfo = {
+  ...WHOOP_INFO,
+  hasIntradayHr: true,
+  hrSource: "whoop_web",
+  whoopWebHr: true,
+  tagline: "Calendar × WHOOP heart rate and recovery",
+  note:
+    "Heart rate during the meeting is your WHOOP strap's, minute by minute, next to WHOOP's Stress Monitor. " +
+    "It is compared with your usual heart rate in other meetings over the past two weeks.",
+};
+
+export function wearableInfo(source: Wearable, opts: { whoopWebHr?: boolean } = {}): WearableInfo {
+  if (source === SOURCE_WHOOP) return opts.whoopWebHr ? WHOOP_WEB_INFO : WHOOP_INFO;
+  return OURA_INFO;
 }
 
 export function activeWearableInfo(env: WearableEnv): WearableInfo {
-  return wearableInfo(activeWearable(env));
+  const primary = wearableInfo(activeWearable(env), { whoopWebHr: whoopWebHrFlag(env) });
+  const ouraHr = primary.ouraHr || present(env.OURA_CLIENT_ID);
+  const whoopWebHr = whoopWebHrActive(env);
+  return { ...primary, ouraHr, whoopWebHr, hasIntradayHr: ouraHr || whoopWebHr };
+}
+
+/** WHOOP web and Bluetooth ingest are enabled independently of score preference. */
+export function whoopWebHrActive(env: WearableEnv): boolean {
+  return whoopWebHrFlag(env);
 }

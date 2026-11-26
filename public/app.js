@@ -1,14 +1,24 @@
+import { meetingHrLabel, scoreLabel } from "./wearable-labels.js";
 /**
  * Meetspike front end. One request per screen (/api/view), cached so a screen
  * you have seen opens instantly and refreshes quietly behind it.
  */
 import { addDays, presetRange } from "./range-presets.js";
+import { appVersion, canOfferInstall, checkForUpdate, initPwa, isInstalledApp, openInstallSheet } from "./pwa.js";
+import { initPullToRefresh } from "./ptr.js";
+import { initAskPanel, openAsk, setAskSourceDisplay } from "./ask-panel.js";
+import {
+  PEOPLE_PRESETS, initPeopleSearch, peopleRangeDates, peopleRangeHtml, peopleSearchHtml,
+  readPeopleRange, validPeopleDates, writePeopleRange,
+} from "./people-ui.js";
+import { liveChartHtml, meetingLiveWindow, mergeLivePoints } from "./live-hr.js";
+import {
+  actionsHtml, excludedRowHtml, isExcluded, looksSkipped, planAction, readTimes, saveOverride, skippedNoteHtml,
+} from "./meeting-actions.js";
 
 const TZ = "America/New_York";
 const CACHE_MS = 5 * 60 * 1000;
-const STORE = "meetspike-cache-v1";
-const CHAT_STORE = "meetspike-chat-v1";
-const MAX_RANGE_DAYS = 92;
+const SOURCE_DISPLAY_PATH = "/api/settings/source-display";
 const DEFAULT_RANGE_DAYS = 14;
 
 class AccessNeededError extends Error {
@@ -60,6 +70,12 @@ function hoursText(seconds) {
   return `${h} h`;
 }
 
+// Round the total minutes first, then split: 28790 s is "8 h 0 m", never "7 h 60 m".
+function sleepText(seconds) {
+  const total = Math.round(seconds / 60);
+  return `${Math.floor(total / 60)} h ${total % 60} m`;
+}
+
 function clockFromLocal(iso) {
   const m = /T(\d{2}):(\d{2})/.exec(iso ?? "");
   if (!m) return "";
@@ -98,28 +114,7 @@ function band(score, w) {
 /* ---------- network and cache ---------- */
 
 const memory = new Map();
-
-function loadStore() {
-  try {
-    const raw = sessionStorage.getItem(STORE);
-    if (!raw) return;
-    // A full page load (refresh, new tab, opening the installed app) shows
-    // what this tab last saw at once, but treats all of it as stale so every
-    // screen refetches. Only in-app navigation within CACHE_MS skips the fetch.
-    for (const [k, v] of Object.entries(JSON.parse(raw))) memory.set(k, { ...v, at: 0 });
-  } catch {
-    /* private mode or blocked storage: memory cache only */
-  }
-}
-
-function saveStore() {
-  try {
-    const keep = [...memory.entries()].slice(-24);
-    sessionStorage.setItem(STORE, JSON.stringify(Object.fromEntries(keep)));
-  } catch {
-    /* ignore */
-  }
-}
+const peopleSearchCache = new Map();
 
 async function api(path, opts = {}) {
   let res;
@@ -141,6 +136,7 @@ async function api(path, opts = {}) {
   if (!res.ok) {
     const err = new Error(body?.error || `Something went wrong (${res.status}).`);
     err.body = body;
+    err.status = res.status;
     throw err;
   }
   if (!body) throw new AccessNeededError();
@@ -148,9 +144,19 @@ async function api(path, opts = {}) {
 }
 
 const inflight = new Map();
+let displayGeneration = 0;
+
+function invalidateDisplayViews() {
+  displayGeneration++;
+  memory.clear();
+  inflight.clear();
+  hrDetails.clear();
+  stopLivePanel();
+}
 
 /** Cached GET: returns what is cached (if any) right away through `onData`, then the fresh copy. */
 async function load(path, onData, { force = false } = {}) {
+  const generation = displayGeneration;
   const hit = memory.get(path);
   if (hit && !force) {
     onData(hit.data, true);
@@ -158,12 +164,16 @@ async function load(path, onData, { force = false } = {}) {
   }
   let p = inflight.get(path);
   if (!p) {
-    p = api(path).finally(() => inflight.delete(path));
+    p = api(path).finally(() => {
+      if (inflight.get(path) === p) inflight.delete(path);
+    });
     inflight.set(path, p);
   }
   const data = await p;
+  if (generation !== displayGeneration) return;
+  memory.delete(path);
   memory.set(path, { at: Date.now(), data });
-  saveStore();
+  if (memory.size > 24) memory.delete(memory.keys().next().value);
   onData(data, false);
   return data;
 }
@@ -187,33 +197,49 @@ const state = {
   start: addDays(todayET(), -(DEFAULT_RANGE_DAYS - 1)),
   end: todayET(),
   person: null,
+  peopleRange: { preset: "28d" },
   wearable: null,
   status: null,
-  openMeeting: null,
+  sourceDisplay: null,
+  sourceDisplaySaving: false,
+  sourceDisplayError: "",
+  openMeeting: undefined,
+  /** The meeting menu that is open: { id, mode: "menu" | "scope" | "times", pending?, busy?, error? }. */
+  meetingUi: null,
   picker: null,
-  ask: null,
-  chat: loadChat(),
-  pending: false,
+  askInfo: null,
   showPrivacy: false,
 };
 
 function readLocation() {
   const p = new URLSearchParams(location.search);
   const hash = location.hash.replace(/^#/, "");
-  const valid = (d) => /^\d{4}-\d{2}-\d{2}$/.test(d ?? "");
+  state.peopleRange = readPeopleRange(p);
+  const valid = (d) => validPeopleDates(d, d);
   const day = p.get("day") ?? p.get("date");
-  if (valid(day)) state.day = day;
+  state.day = valid(day) ? day : todayET();
   const start = p.get("start");
   const end = p.get("end");
-  if (valid(start) && valid(end) && start <= end && spanDays(start, end) <= MAX_RANGE_DAYS) {
+  if (validPeopleDates(start, end)) {
     state.start = start;
     state.end = end;
+  } else {
+    state.end = todayET();
+    state.start = addDays(state.end, 1 - DEFAULT_RANGE_DAYS);
   }
   if (hash.startsWith("person/")) {
-    state.tab = "person";
-    state.person = decodeURIComponent(hash.slice(7));
-  } else if (["today", "dates", "people", "more", "ask"].includes(hash)) {
+    try {
+      state.person = decodeURIComponent(hash.slice(7));
+      state.tab = state.person ? "person" : "people";
+    } catch {
+      state.tab = "people";
+    }
+  } else if (["today", "dates", "people", "more"].includes(hash)) {
     state.tab = hash;
+  } else if (hash === "ask") {
+    // Old links to the Ask tab: open the popup over Today.
+    state.tab = "today";
+    state.openAskOnLoad = true;
   } else if (valid(start) && valid(end) && start !== end && !hash) {
     state.tab = "dates";
   } else {
@@ -229,6 +255,7 @@ function writeLocation(replace = false) {
     p.set("start", state.start);
     p.set("end", state.end);
   }
+  writePeopleRange(p, state.peopleRange);
   const hash = state.tab === "person" ? `#person/${encodeURIComponent(state.person)}` : state.tab === "today" ? "" : `#${state.tab}`;
   const url = `${location.pathname}${p.size ? `?${p}` : ""}${hash}`;
   if (url === `${location.pathname}${location.search}${location.hash}`) return;
@@ -246,7 +273,7 @@ function go(changes, { replace = false } = {}) {
 /* ---------- shared pieces ---------- */
 
 function setTabs() {
-  for (const a of document.querySelectorAll("[data-tab]")) {
+  for (const a of document.querySelectorAll("a[data-tab]")) {
     const tab = a.getAttribute("data-tab");
     const on = tab === state.tab || (tab === "people" && state.tab === "person");
     if (on) a.setAttribute("aria-current", "page");
@@ -259,12 +286,18 @@ function setTabs() {
 function noteMeta(data) {
   if (data?.wearable) state.wearable = data.wearable;
   if (data?.status) state.status = data.status;
+  const display = data?.status?.sourceDisplay ?? data?.sourceDisplay;
+  if (display && !state.sourceDisplaySaving) {
+    state.sourceDisplay = display;
+    setAskSourceDisplay(display);
+  }
   if (data?.status?.displayTitle) document.title = data.status.displayTitle;
   setTabs();
 }
 
 function screen(html) {
   qs("#screen").innerHTML = html;
+  syncLivePanel();
 }
 
 function showError(err) {
@@ -324,10 +357,22 @@ function metricRow({ name, value, usual, unit = "", higherIs = "better", step = 
   </div>`;
 }
 
+/** "Heart rate from 9:45 AM" when the strap covered only part of the meeting, else "". */
+function partialNote(hr, timeZone = TZ) {
+  const p = hr?.coverage === "ok" ? hr.partial : null;
+  if (!p) return "";
+  const clock = (iso) => new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone });
+  if (p.lateStart && p.earlyEnd) return `HR between ${clock(p.fromUtc)} and ${clock(p.toUtc)}`;
+  if (p.lateStart) return `HR from ${clock(p.fromUtc)}`;
+  if (p.earlyEnd) return `HR until ${clock(p.toUtc)}`;
+  return "Gaps in heart rate";
+}
+
 function zonePill(hr) {
-  if (!hr || hr.coverage !== "ok" || !hr.zone) return `<span class="pill none">No HR</span>`;
-  const cls = hr.zone === "high" ? "bad" : hr.zone === "moderate" ? "warn" : "good";
-  return `<span class="pill ${cls}">${esc(hr.headline)}</span>`;
+  if (!hr || hr.coverage !== "ok") return `<span class="pill none">No HR</span>`;
+  const cls = hr.zone === "high" ? "bad" : hr.zone === "moderate" ? "warn" : hr.zone === "low" ? "good" : "none";
+  const note = partialNote(hr);
+  return `<span class="pill ${cls}"${note ? ` title="${esc(note)}"` : ""}>${esc(`${hr.headline} · ${meetingHrLabel(hr)}`)}</span>`;
 }
 
 function sparkline(series) {
@@ -348,8 +393,214 @@ function sparkline(series) {
   return `<svg class="spark" viewBox="0 0 300 80" role="img" aria-label="Heart-rate during the meeting, ${Math.round(Math.min(...bpms))} to ${Math.round(Math.max(...bpms))} bpm"><polyline points="${pts}" fill="none" stroke="var(--strain)" stroke-width="2.2" stroke-linejoin="round"/></svg>`;
 }
 
+/* ---------- one meeting's heart rate (WHOOP web) ---------- */
+
+// Per-meeting detail from /api/meetings/:id/hr, kept for this visit.
+const hrDetails = new Map();
+
+const LIVE_POLL_MS = 5_000;
+let liveWatch;
+let nextLiveMeetingTimer;
+
+function stopLivePanel() {
+  if (!liveWatch) return;
+  clearTimeout(liveWatch.timer);
+  liveWatch.request?.abort();
+  liveWatch = undefined;
+}
+
+function paintLivePanel(watch) {
+  watch.host.innerHTML = liveChartHtml(watch.points, watch.window, Date.now(), watch.timeZone, watch.status);
+}
+
+function syncLivePanel() {
+  const host = qs("[data-live-meeting]");
+  if (!host || document.hidden) return stopLivePanel();
+  const id = host.dataset.liveMeeting;
+  if (liveWatch?.id === id) {
+    liveWatch.host = host;
+    paintLivePanel(liveWatch);
+    return;
+  }
+  stopLivePanel();
+  liveWatch = {
+    id, host, points: [], cursor: 0, window: JSON.parse(host.dataset.window),
+    timeZone: host.dataset.zone || TZ,
+  };
+  paintLivePanel(liveWatch);
+  pollLivePanel(liveWatch);
+}
+
+async function pollLivePanel(watch) {
+  if (watch !== liveWatch) return;
+  if (Date.now() >= watch.window.toMs) {
+    if (Date.now() >= JSON.parse(watch.host.dataset.window).toMs) {
+      stopLivePanel();
+      render();
+    } else {
+      watch.status = "Live window ended";
+      paintLivePanel(watch);
+    }
+    return;
+  }
+  const requestedCursor = watch.cursor;
+  const request = new AbortController();
+  watch.request = request;
+  const timeout = setTimeout(() => request.abort(), 10_000);
+  try {
+    const data = await api(`/api/meetings/${encodeURIComponent(watch.id)}/live-hr?since=${requestedCursor}`, {
+      cache: "no-store", signal: request.signal,
+    });
+    if (watch !== liveWatch) return;
+    const changed = data.window.fromMs !== watch.window.fromMs || data.window.toMs !== watch.window.toMs;
+    watch.window = data.window;
+    watch.status = "";
+    if (changed && requestedCursor) {
+      // A calendar edit can add time to the window on either side of the cursor.
+      watch.points = [];
+      watch.cursor = 0;
+    } else if (data.active) {
+      watch.points = mergeLivePoints(watch.points, data.points);
+      watch.cursor = data.cursor;
+    } else {
+      watch.points = [];
+      watch.cursor = 0;
+      watch.status = "Outside the live window";
+    }
+  } catch (err) {
+    if (watch !== liveWatch) return;
+    if (err instanceof AccessNeededError || err.status === 403) {
+      watch.points = [];
+      watch.status = "Sign in to resume";
+      qs("#access").hidden = false;
+      paintLivePanel(watch);
+      return;
+    }
+    if (err.status === 404) watch.points = [];
+    watch.status = err.status === 404 ? "Live heart rate unavailable" : "Reconnecting…";
+  } finally {
+    clearTimeout(timeout);
+    watch.request = null;
+  }
+  paintLivePanel(watch);
+  watch.timer = setTimeout(() => pollLivePanel(watch), LIVE_POLL_MS);
+}
+
+function loadHrDetail(id) {
+  const have = hrDetails.get(id);
+  if (have && (have.loading || Date.now() - (have.at ?? 0) < 60_000)) return;
+  const generation = displayGeneration;
+  hrDetails.set(id, { loading: true, data: have?.data, at: have?.at });
+  api(`/api/meetings/${encodeURIComponent(id)}/hr`)
+    .then((data) => {
+      if (generation === displayGeneration) hrDetails.set(id, { data, at: Date.now() });
+    })
+    .catch((err) => {
+      if (generation === displayGeneration) hrDetails.set(id, { error: err.message || String(err), at: Date.now() });
+    })
+    .finally(() => {
+      if (generation === displayGeneration && shownMeetingId() === id) render();
+    });
+}
+
+function shownMeetingId() {
+  return qs('[data-meeting][aria-expanded="true"]')?.dataset.meeting;
+}
+
+function fmtLevel(n) {
+  return n == null ? "—" : (Math.round(n * 10) / 10).toFixed(1);
+}
+
+/** HR line over the meeting (with the 10 minutes either side), usual band behind it, stress line on a 0–3 scale. */
+function hrChart(d) {
+  const series = d.series ?? [];
+  if (!series.length) return "";
+  const W = 300;
+  const H = 130;
+  const top = 8;
+  const bottom = 112;
+  const t0 = Date.parse(d.window.fetchStartUtc);
+  const t1 = Date.parse(d.window.fetchEndUtc);
+  const x = (t) => 4 + ((t - t0) / Math.max(1, t1 - t0)) * (W - 8);
+  const bpms = series.map((p) => p.bpm);
+  const b = d.baseline ?? {};
+  const lo = Math.min(...bpms, b.lowBpm ?? Infinity) - 4;
+  const hi = Math.max(...bpms, b.highBpm ?? -Infinity) + 4;
+  const y = (bpm) => bottom - ((bpm - lo) / Math.max(1, hi - lo)) * (bottom - top);
+  const ys = (level) => bottom - (Math.max(0, Math.min(3, level)) / 3) * (bottom - top);
+  const band =
+    b.lowBpm != null && b.highBpm != null
+      ? `<rect x="4" width="${W - 8}" y="${y(b.highBpm).toFixed(1)}" height="${Math.max(1, y(b.lowBpm) - y(b.highBpm)).toFixed(1)}" fill="var(--sleep)" opacity="0.16"/>`
+      : "";
+  const ms = x(Date.parse(d.window.startUtc));
+  const me = x(Date.parse(d.window.endUtc));
+  const meeting = `<rect x="${ms.toFixed(1)}" width="${Math.max(1, me - ms).toFixed(1)}" y="${top}" height="${bottom - top}" fill="var(--strain)" opacity="0.07"/>
+    <line x1="${ms.toFixed(1)}" x2="${ms.toFixed(1)}" y1="${top}" y2="${bottom}" stroke="var(--faint)" stroke-dasharray="2 3"/>
+    <line x1="${me.toFixed(1)}" x2="${me.toFixed(1)}" y1="${top}" y2="${bottom}" stroke="var(--faint)" stroke-dasharray="2 3"/>`;
+  const source = meetingHrLabel(d.hrStress);
+  const groups = [];
+  for (const p of series) {
+    const provider = p.source || source;
+    const time = Date.parse(p.t);
+    const previous = groups.at(-1);
+    const gap = provider === "WHOOP" ? 180_000 : 600_000;
+    const point = `${x(time).toFixed(1)},${y(p.bpm).toFixed(1)}`;
+    if (previous?.provider === provider && time - previous.end <= gap) {
+      previous.points.push(point);
+      previous.end = time;
+    } else {
+      groups.push({ provider, end: time, points: [point] });
+    }
+  }
+  const hrLines = groups.map(({ provider, points }) => {
+    const color = provider === "Oura" && source === "WHOOP + Oura" ? "var(--sleep)" : "var(--strain)";
+    if (points.length === 1) {
+      const [cx, cy] = points[0].split(",");
+      return `<circle cx="${cx}" cy="${cy}" r="2" fill="${color}"/>`;
+    }
+    return `<polyline points="${points.join(" ")}" fill="none" stroke="${color}" stroke-width="2.2" stroke-linejoin="round"/>`;
+  }).join("");
+  const stress = d.stress?.points ?? [];
+  const stressLine = stress.length
+    ? `<polyline points="${stress.map((p) => `${x(Date.parse(p.t)).toFixed(1)},${ys(p.level).toFixed(1)}`).join(" ")}" fill="none" stroke="var(--warn)" stroke-width="1.6" stroke-dasharray="4 3" opacity="0.9"/>`
+    : "";
+  const label = (t, anchor) =>
+    `<text x="${x(t).toFixed(1)}" y="${H - 4}" font-size="9" fill="var(--faint)" text-anchor="${anchor}">${esc(new Date(t).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: d.timeZone || TZ }))}</text>`;
+  const aria = `${source} heart rate from ${Math.round(Math.min(...bpms))} to ${Math.round(Math.max(...bpms))} bpm during the meeting${
+    b.meanBpm != null ? `, WHOOP usual about ${Math.round(b.meanBpm)}` : ""
+  }${stress.length ? `, WHOOP stress up to ${fmtLevel(d.stress.peakLevel)} of 3` : ""}`;
+  return `<svg class="spark hrchart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(aria)}">
+    ${band}${meeting}${stressLine}
+    ${hrLines}
+    ${label(Date.parse(d.window.startUtc), "start")}${label(Date.parse(d.window.endUtc), "end")}
+  </svg>
+  <p class="legend"><span class="k hr"></span>${source === "WHOOP + Oura" ? 'WHOOP <span class="k band"></span>Oura' : esc(source)} heart rate${b.lowBpm != null ? ` <span class="k band"></span>Your WHOOP usual (${Math.round(b.lowBpm)}–${Math.round(b.highBpm)})` : ""}${
+    stress.length ? ` <span class="k stress"></span>WHOOP Stress (0–3)` : ""
+  }</p>`;
+}
+
+function hrDetailHtml(e) {
+  const entry = hrDetails.get(e.id);
+  if (!entry || (entry.loading && !entry.data)) {
+    return `<div class="hrdetail">${sparkline(e.hrStress?.series)}<p class="lead">Loading heart rate…</p></div>`;
+  }
+  if (entry.error) return `<div class="hrdetail"><p class="lead">No heart rate for this meeting.</p></div>`;
+  const d = entry.data;
+  const hr = d.hrStress;
+  const facts = [];
+  if (hr?.coverage === "ok") {
+    if (hr.meanBpm != null) facts.push(`${meetingHrLabel(hr)} avg ${Math.round(hr.meanBpm)} bpm`);
+    if (hr.maxBpm != null) facts.push(`${meetingHrLabel(hr)} peak ${Math.round(hr.maxBpm)} bpm`);
+  }
+  if (d.stress?.meanLevel != null) facts.push(`WHOOP stress ${fmtLevel(d.stress.meanLevel)} avg, ${fmtLevel(d.stress.peakLevel)} peak`);
+  const story = hr?.coverage === "ok" ? hr.story : d.message || "No heart rate for this meeting.";
+  const note = partialNote(hr, d.timeZone || TZ);
+  if (note) facts.unshift(note);
+  return `<div class="hrdetail">${hrChart(d)}${facts.length ? `<p class="meta">${esc(facts.join(" · "))}</p>` : ""}<p class="lead">${esc(story)}</p></div>`;
+}
+
 function meetingMeta(e) {
-  const people = (e.attendees ?? []).map((a) => a.name || a.email.split("@")[0]);
+  const people = (e.attendees ?? []).map((a) => a.name || a.email);
   const bits = [];
   if (e.sourceType && e.sourceType !== "calendar") bits.push(e.sourceType.startsWith("plaud_phone") ? "phone call" : "recording");
   else if (e.kind) bits.push(e.kind.replaceAll("_", " "));
@@ -358,22 +609,37 @@ function meetingMeta(e) {
   return bits.join(" · ");
 }
 
-function meetingRows(events, w) {
+function meetingRows(events, w, openId, timeZone = TZ) {
+  const now = Date.now();
   return events
     .map((e) => {
-      const open = state.openMeeting === e.id;
+      const clock = clockFromLocal(e.startLocal);
+      // Left out (not joined, not linked): dimmed, with a way back. No chart, no score.
+      if (isExcluded(e)) return excludedRowHtml(e, clock, state.meetingUi);
+      const open = openId === e.id;
       const mins = Math.round((e.durationS ?? 0) / 60);
       const len = mins >= 60 ? `${Math.floor(mins / 60)} h${mins % 60 ? ` ${mins % 60} m` : ""}` : `${mins} m`;
-      const hr = w?.hasIntradayHr ? zonePill(e.hrStress) : "";
-      const detail =
-        open && w?.hasIntradayHr
-          ? `<div>${sparkline(e.hrStress?.series)}<p class="lead">${esc(e.hrStress?.story || "No ring heart-rate in this window.")}</p></div>`
-          : "";
+      const window = w?.whoopWebHr ? meetingLiveWindow(e) : null;
+      const inProgress = window && now >= window.startMs && now < window.endMs;
+      const hr = inProgress ? `<span class="pill live-meeting-pill">In progress</span>` : w?.hasIntradayHr ? zonePill(e.hrStress) : "";
+      let detail = "";
+      if (open && w?.hasIntradayHr) {
+        const showLive = window && now >= window.fromMs && now < window.toMs;
+        if (showLive) {
+          detail = `<div data-live-meeting="${esc(e.id)}" data-window="${esc(JSON.stringify(window))}" data-zone="${esc(timeZone)}"></div>`;
+        }
+        if (!showLive || e.hrStress?.coverage === "ok") {
+          loadHrDetail(e.id);
+          detail += hrDetailHtml(e);
+        }
+      }
+      const extras = open ? actionsHtml(e, state.meetingUi, timeZone) : "";
+      const note = looksSkipped(e) ? skippedNoteHtml(e) : "";
       return `<button type="button" class="mrow" data-meeting="${esc(e.id)}" aria-expanded="${open}">
-          <span class="t">${esc(clockFromLocal(e.startLocal))}</span>
-          <span class="w"><b>${esc(e.title || "Untitled")}</b><small>${esc(meetingMeta(e))}</small></span>
+          <span class="t">${esc(clock)}</span>
+          <span class="w"><b>${esc(e.title || "Untitled")}</b><small>${esc([meetingMeta(e), partialNote(e.hrStress, timeZone)].filter(Boolean).join(" · "))}</small></span>
           ${hr || `<span class="len">${esc(len)}</span>`}
-        </button>${detail}`;
+        </button>${detail}${extras}${note}`;
     })
     .join("");
 }
@@ -395,6 +661,55 @@ function timeline(events) {
     <div class="timeline-axis" aria-hidden="true"><span>7 AM</span><span>11 AM</span><span>3 PM</span><span>6 PM</span><span>9 PM</span></div>`;
 }
 
+/* ---------- meeting choices ---------- */
+
+/** The meeting as the loaded day has it. */
+function dayTimeZone() {
+  return memory.get(viewPath(state.day, state.day))?.data?.day?.timeZone ?? TZ;
+}
+
+function dayMeeting(id) {
+  return memory.get(viewPath(state.day, state.day))?.data?.day?.calendar?.events?.find((e) => e.id === id);
+}
+
+function toggleMeetingMenu(id) {
+  state.meetingUi = state.meetingUi?.id === id && state.meetingUi.mode ? null : { id, mode: "menu" };
+  render().then(() => qs(`.mmenu[data-id="${CSS.escape(id)}"]`)?.focus());
+}
+
+function runMeetingAction(name, id) {
+  const e = dayMeeting(id);
+  if (!e || state.meetingUi?.busy) return;
+  if (name === "close") {
+    state.meetingUi = null;
+    render().then(() => qs(`.mmenu[data-id="${CSS.escape(id)}"]`)?.focus());
+    return;
+  }
+  const plan = planAction(name, e, { pending: state.meetingUi?.id === id ? state.meetingUi.pending : undefined });
+  if (!plan) return;
+  if (plan.body) commitMeetingChange(id, plan.body);
+  else {
+    state.meetingUi = { id, mode: plan.mode, pending: plan.pending };
+    render();
+  }
+}
+
+/** Save, then reload what is on screen. A failure leaves the old state and says so. */
+async function commitMeetingChange(id, body) {
+  state.meetingUi = { ...(state.meetingUi ?? { id }), id, busy: true, error: "" };
+  const result = await saveOverride(api, id, body);
+  if (!result.ok) {
+    state.meetingUi = { ...state.meetingUi, busy: false, error: result.message };
+    render();
+    return;
+  }
+  state.meetingUi = null;
+  // Today, dates, people, companies and what the Mac reads all change with a choice.
+  invalidateDisplayViews();
+  peopleSearchCache.clear();
+  await render();
+}
+
 /* ---------- Today ---------- */
 
 function renderToday(v) {
@@ -404,31 +719,48 @@ function renderToday(v) {
   const morning = b.priorNight;
   const next = b.nextMorning;
   const cal = b.calendar;
-  const events = cal?.events ?? [];
-  const R = w.readinessLabel;
+  const listed = cal?.events ?? [];
+  // Meetings left out are listed so they can be undone, but they are not on the timeline or in "in progress".
+  const events = listed.filter((e) => !isExcluded(e));
+  const R = scoreLabel(w);
   const u = v.usual;
   const isToday = b.date === today;
   const label = isToday ? "Today" : fmtDay(b.date, { weekday: "short", month: "short", day: "numeric" });
+  let openId = state.openMeeting;
+  if (isToday && openId === undefined && w.whoopWebHr) {
+    const now = Date.now();
+    const windows = events.map((event) => ({ id: event.id, window: meetingLiveWindow(event) })).filter((event) => event.window);
+    const started = windows.filter(({ window }) => now >= window.startMs && now < window.toMs)
+      .sort((a, b) => b.window.startMs - a.window.startMs);
+    openId = (started.find(({ window }) => now < window.endMs) ?? started[0])?.id;
+    const next = Math.min(...windows.map(({ window }) => window.startMs).filter((start) => start > now));
+    clearTimeout(nextLiveMeetingTimer);
+    if (Number.isFinite(next)) nextLiveMeetingTimer = setTimeout(render, next - now);
+  }
 
-  const rec = morning?.readinessScore ?? null;
-  const rb = band(rec, w);
+  const scores = v.morningScores;
   const rings = [
-    ring({
-      label: R.toUpperCase(),
-      value: rec == null ? "—" : `${rec}%`,
-      pct: (rec ?? 0) / 100,
-      color: rb ? `var(--${rb.cls})` : "var(--faint)",
-      note: rb?.word ?? "No score",
-      aria: rec == null ? `${R}: no score` : `${R} ${rec} percent, ${rb.word}`,
+    ...scores.map((score) => {
+      const rec = score.morning;
+      const rb = band(rec, score);
+      const title = scoreLabel(score);
+      return ring({
+        label: title,
+        value: rec == null ? "—" : `${rec}%`,
+        pct: (rec ?? 0) / 100,
+        color: rb ? `var(--${rb.cls})` : "var(--faint)",
+        note: rb?.word ?? "No score",
+        aria: rec == null ? `${title} has no score` : `${title} ${rec} percent, ${rb.word}`,
+      });
     }),
-    ring({
-      label: "SLEEP",
+    w.source ? ring({
+      label: `Sleep (${w.label})`,
       value: morning?.sleepScore == null ? "—" : `${morning.sleepScore}%`,
       pct: (morning?.sleepScore ?? 0) / 100,
       color: "var(--sleep)",
-      note: morning?.totalSleepS ? `${Math.floor(morning.totalSleepS / 3600)} h ${Math.round((morning.totalSleepS % 3600) / 60)} m` : "No score",
-      aria: morning?.sleepScore == null ? "Sleep: no score" : `Sleep ${morning.sleepScore} percent`,
-    }),
+      note: morning?.totalSleepS ? sleepText(morning.totalSleepS) : "No score",
+      aria: morning?.sleepScore == null ? `${w.label} sleep has no score` : `${w.label} sleep ${morning.sleepScore} percent`,
+    }) : "",
     w.strainLabel
       ? ring({
           label: w.strainLabel.toUpperCase(),
@@ -451,44 +783,50 @@ function renderToday(v) {
   const heavy = (cal?.totalDurationS ?? 0) >= 4 * 3600 || (cal?.eventCount ?? 0) >= 5;
   const e = v.effect;
   let outlook = "";
-  const r = R.toLowerCase();
-  if (next?.readinessScore != null) {
-    const diff = u.recovery != null ? next.readinessScore - u.recovery : null;
-    const vs =
-      diff == null ? "" : Math.abs(diff) < 3 ? ` That is about your usual ${u.recovery}%.` : ` That is ${Math.abs(diff)} ${diff < 0 ? "under" : "over"} your usual ${u.recovery}%.`;
-    outlook = `<section class="card"><p class="kicker">The night after</p>
-      <h2 class="title">You woke at ${next.readinessScore}% ${esc(r)}${next.sleepScore != null ? `, sleep ${next.sleepScore}%` : ""}.</h2>
-      <p class="lead">${esc(vs.trim())}</p></section>`;
+  if (!w.source) {
+    outlook = "";
+  } else if (scores.some((score) => score.nextMorning != null)) {
+    outlook = `<section class="card"><h2 class="kicker">The night after</h2>
+      ${scores.map((score) => metricRow({
+        name: scoreLabel(score), value: score.nextMorning, usual: score.usual.recovery,
+        unit: "%", higherIs: "better", step: 3,
+      })).join("")}</section>`;
   } else if (b.date >= addDays(today, -1)) {
     let line;
     if (e.cost != null && e.heavy.days >= 2 && e.lighter.days >= 2) {
       line = heavy
-        ? `After your last ${e.heavy.days} heavy days you woke at ${e.heavy.nextRecovery}% on average, against ${e.lighter.nextRecovery}% after lighter days.`
-        : `After lighter days you usually wake at ${e.lighter.nextRecovery}%, against ${e.heavy.nextRecovery}% after heavy ones.`;
+        ? `After your last ${e.heavy.days} heavy days you woke at ${e.heavy.nextRecovery}% ${R} on average, against ${e.lighter.nextRecovery}% after lighter days.`
+        : `After lighter days you usually wake at ${e.lighter.nextRecovery}% ${R}, against ${e.heavy.nextRecovery}% after heavy ones.`;
     } else {
       line = `Not enough days with scores yet to say what a day like this usually costs.`;
     }
     outlook = `<section class="card"><p class="kicker">What to expect tomorrow</p>
-      <h2 class="title">${heavy && e.cost != null && e.cost >= 3 ? `Heavy days usually cost you about ${e.cost} points.` : heavy ? "A heavy day." : "A lighter day."}</h2>
+      <h2 class="title">${heavy && e.cost != null && e.cost >= 3 ? `Heavy days usually cost you about ${e.cost} points of ${esc(R)}.` : heavy ? "A heavy day." : "A lighter day."}</h2>
       <p class="lead">${esc(line)}</p></section>`;
   } else {
-    outlook = `<section class="card"><p class="kicker">The night after</p><p class="lead">No ${esc(w.label)} score for the next morning.</p></section>`;
+    outlook = `<section class="card"><p class="kicker">The night after</p><p class="lead">No wearable scores for the next morning.</p></section>`;
   }
 
   const rows = [
     metricRow({ name: "Meeting hours", value: round((cal?.totalDurationS ?? 0) / 3600, 1), usual: u.meetingHours, higherIs: "worse", step: 0.5, words: ["more", "fewer"] }),
     metricRow({ name: "After 6 pm", value: cal?.afterHoursCount ?? 0, usual: u.afterHours, higherIs: "worse", step: 1, words: ["more", "fewer"] }),
-    metricRow({ name: "Heart rate variability", value: round(morning?.avgHrv), usual: u.hrv, unit: " ms", higherIs: "better", step: 2 }),
-    metricRow({ name: "Resting heart rate", value: round(morning?.lowestHr), usual: u.restingHr, unit: " bpm", higherIs: "worse", step: 1 }),
+    ...scores.map((score) => metricRow({
+      name: scoreLabel(score), value: score.morning, usual: score.usual.recovery,
+      unit: "%", higherIs: "better", step: 3,
+    })),
+    ...(w.source ? [
+      metricRow({ name: `Heart rate variability (${w.label})`, value: round(morning?.avgHrv), usual: u.hrv, unit: " ms", higherIs: "better", step: 2 }),
+      metricRow({ name: `Resting heart rate (${w.label})`, value: round(morning?.lowestHr), usual: u.restingHr, unit: " bpm", higherIs: "worse", step: 1 }),
+    ] : []),
     w.strainLabel ? metricRow({ name: `Day ${w.strainLabel}`, value: morning?.strain ?? null, usual: u.strain, higherIs: "neutral", step: 1 }) : "",
   ].join("");
 
-  const meetings = events.length
+  const meetings = listed.length
     ? `<section class="card" aria-labelledby="m-h">
         <div class="head"><h2 class="kicker" id="m-h">${isToday ? "Today's meetings" : "Meetings"}</h2>
           <span class="meta">${esc(plural(cal.eventCount, "meeting"))} · ${esc(hoursText(cal.totalDurationS))}${cal.afterHoursCount ? ` · ${cal.afterHoursCount} after 6 pm` : ""}</span></div>
         ${timeline(events)}
-        <div class="mlist">${meetingRows(events, w)}</div>
+        <div class="mlist">${meetingRows(listed, w, openId, b.timeZone)}</div>
       </section>`
     : `<section class="card"><p class="kicker">Meetings</p><p class="lead">No meetings on the calendar.</p></section>`;
 
@@ -496,21 +834,25 @@ function renderToday(v) {
 
   screen(`
     ${dateBar({ label, sub: isToday ? fmtDay(b.date, { weekday: "short", month: "short", day: "numeric" }) : "", prevLabel: "Previous day", nextLabel: "Next day", nextDisabled: b.date >= today })}
-    <p class="kicker center">${esc(w.tagline || `Calendar × ${w.label}`)}</p>
-    <div class="rings">${rings}</div>
-    ${meetings}
-    ${outlook}
-    <section class="list" aria-label="This day against your usual">${rows}</section>
-    ${hits}
-    <p class="foot">${esc(syncLine())}</p>
+    <p class="kicker center">${esc(scores.length > 1 ? "Calendar × WHOOP and Oura" : w.tagline || `Calendar × ${w.label}`)}</p>
+    <div class="today-grid${w.source ? "" : " calendar-only"}">
+      <div class="t-rings"><div class="rings${scores.length > 1 ? " dual" : ""}">${rings}</div></div>
+      <div class="t-meetings">${meetings}</div>
+      ${outlook ? `<div class="t-outlook">${outlook}</div>` : ""}
+      <section class="t-usual list" aria-label="This day against your usual">${rows}</section>
+      ${hits ? `<div class="t-hits">${hits}</div>` : ""}
+    </div>
+    ${syncFoot()}
   `);
   prefetch(viewPath(addDays(b.date, -1), addDays(b.date, -1)));
 }
 
 function hitsCard(hits, w, title) {
+  const meetingHits = hits.filter((h) => h.kind !== "day");
+  // Only whole-day hits: no card, rather than an empty one.
+  if (!meetingHits.length) return "";
   return `<section class="card"><p class="kicker">${esc(title)}</p>
-    <div class="mlist">${hits
-      .filter((h) => h.kind !== "day")
+    <div class="mlist">${meetingHits
       .slice(0, 5)
       .map(
         (h) => `<button type="button" class="mrow" data-goto-day="${esc(h.day)}">
@@ -533,14 +875,165 @@ function shortSentence(hit) {
 function syncLine() {
   const s = state.status;
   const w = state.wearable;
-  if (!s?.lastSync?.created_at) return w ? `${w.label} and Google Calendar` : "";
+  if (!s?.lastSync?.created_at) return w?.source ? `${w.label} and Google Calendar` : "Google Calendar";
   const at = new Date(s.lastSync.created_at).toLocaleString("en-US", { timeZone: TZ, month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
   return `Last synced ${at}${s.sandbox ? " · sandbox data" : ""}`;
 }
 
+/** What the calendar sync is doing, in a few words: "Syncing…", "Synced just now", or the error. */
+function calSyncText() {
+  const c = state.calSync;
+  if (!c) return syncLine();
+  if (c.running) return "Syncing your calendar…";
+  if (c.error) return `Calendar sync failed: ${c.error}`;
+  const mins = Math.floor((Date.now() - c.at) / 60000);
+  const ago = mins < 1 ? "just now" : mins === 1 ? "1 min ago" : mins < 60 ? `${mins} min ago` : syncLine();
+  const whoop = state.sourceDisplay?.whoop && c.whoopFailed ? " · WHOOP did not refresh" : "";
+  const oura = state.sourceDisplay?.oura && c.ouraFailed ? " · Oura did not refresh" : "";
+  const synced = mins < 60 ? `Synced ${ago}${state.status?.sandbox ? " · sandbox data" : ""}` : ago;
+  return `${synced}${whoop}${oura}`;
+}
+
+function syncFoot() {
+  const c = state.calSync;
+  return `<p class="foot sync-foot"><span id="sync-state" role="status" class="${c?.error ? "sync-err" : ""}">${esc(calSyncText())}</span>
+    <button type="button" class="sync-btn" data-action="resync" ${c?.running ? "disabled" : ""} aria-label="Refresh data">↻ Refresh</button></p>`;
+}
+
+function paintSyncState() {
+  const el = qs("#sync-state");
+  if (el) {
+    el.textContent = calSyncText();
+    el.className = state.calSync?.error ? "sync-err" : "";
+  }
+  const btn = qs(".sync-btn");
+  if (btn) btn.disabled = Boolean(state.calSync?.running);
+}
+
+let syncPromise = null;
+
+/**
+ * Pull new and moved meetings from Google and today's WHOOP sleep, recovery
+ * and strain now (POST /api/refresh), then redraw the screen from fresh data.
+ * `full` re-lists the whole calendar window instead (More, Sync calendar).
+ * Runs on page load, on coming back to the app, on the Refresh button and on
+ * pull to refresh.
+ */
+function resyncCalendar({ full = false, quiet = false } = {}) {
+  if (syncPromise) return syncPromise;
+  const noGoogle = Boolean(state.status && state.status.googleConnected === false);
+  if (noGoogle && full) return Promise.resolve(null);
+  const prev = state.calSync;
+  state.calSync = { ...(prev ?? {}), running: true, error: null };
+  if (!quiet) paintSyncState();
+  syncPromise = postRefresh(full, noGoogle)
+    .then(({ calendar: r, whoopFailed, ouraFailed }) => {
+      // No calendar on this install: keep the footer as it was, but still redraw.
+      state.calSync = !r && noGoogle ? (prev ?? null) : { running: false, error: null, at: Date.now(), result: r, whoopFailed, ouraFailed };
+      rememberSync();
+      // Keep what is on screen, but treat it as stale so every screen refetches.
+      for (const v of memory.values()) v.at = 0;
+      peopleSearchCache.clear();
+      render();
+      return r;
+    })
+    .catch((err) => {
+      if (err instanceof AccessNeededError) {
+        state.calSync = prev ?? null;
+        qs("#access").hidden = false;
+      } else if (err.body?.needsGoogle && quiet) {
+        // Calendar not connected: nothing to sync, nothing to shout about.
+        state.calSync = prev ?? null;
+      } else {
+        state.calSync = { ...(prev ?? {}), running: false, error: err.message || String(err) };
+      }
+      paintSyncState();
+      if (err.wearableRefreshed) {
+        for (const v of memory.values()) v.at = 0;
+        render();
+      }
+      return null;
+    })
+    .finally(() => {
+      syncPromise = null;
+    });
+  return syncPromise;
+}
+
+/**
+ * One refresh call for the calendar and WHOOP. Resolves { calendar, whoopFailed }
+ * or throws the same errors the calendar sync did, so the callers stay as they
+ * were. An older Worker without /api/refresh gets the calendar-only sync.
+ */
+async function postRefresh(full, noGoogle) {
+  const body = JSON.stringify(full ? { mode: "live", full: true } : { mode: "live" });
+  const init = { method: "POST", headers: { "content-type": "application/json" }, body };
+  let r;
+  try {
+    r = await api("/api/refresh", init);
+  } catch (err) {
+    if (err.status !== 404) throw err;
+    if (noGoogle) return { calendar: null, whoopFailed: false };
+    return { calendar: await api("/api/calendar/sync", init), whoopFailed: false };
+  }
+  const whoopFailed = r.whoop?.ok === false;
+  const ouraFailed = r.oura?.ok === false;
+  const cal = r.calendar ?? {};
+  if (cal.ok === false) {
+    // No Google on this install: WHOOP still refreshed, the calendar has nothing to do.
+    if (noGoogle && cal.needsGoogle) return { calendar: null, whoopFailed, ouraFailed };
+    const err = new Error(cal.error || "Calendar sync failed");
+    err.body = { needsGoogle: Boolean(cal.needsGoogle), error: cal.error };
+    // WHOOP may still have new scores: the caller redraws for them.
+    err.wearableRefreshed = r.whoop?.ok || r.oura?.ok;
+    throw err;
+  }
+  return { calendar: cal, whoopFailed, ouraFailed };
+}
+
+const SYNC_STORE = "meetspike-calsync-at";
+const AUTO_SYNC_MS = 2 * 60 * 1000;
+
+function rememberSync() {
+  try {
+    sessionStorage.setItem(SYNC_STORE, String(Date.now()));
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Sync on its own unless this tab synced in the last two minutes. */
+function autoSync() {
+  let last = state.calSync?.at ?? 0;
+  try {
+    last = Math.max(last, Number(sessionStorage.getItem(SYNC_STORE) || 0));
+  } catch {
+    /* ignore */
+  }
+  if (Date.now() - last < AUTO_SYNC_MS) return;
+  resyncCalendar({ quiet: true });
+}
+
+/**
+ * Pull to refresh (installed app): new version check, then calendar, then the
+ * screen's own data (meetings, people, scores and heart rate), redrawn in
+ * place. Only the read endpoints the screens already use, plus the same
+ * incremental calendar sync that runs on open and on the Refresh button.
+ */
+async function pullRefresh() {
+  const update = checkForUpdate();
+  await resyncCalendar({ quiet: true });
+  for (const v of memory.values()) v.at = 0;
+  peopleSearchCache.clear();
+  const openId = shownMeetingId();
+  if (openId) hrDetails.delete(openId);
+  await render();
+  await update;
+}
+
 /* ---------- Dates ---------- */
 
-function recoveryChart(series, usual) {
+function recoveryChart(series, usual, sourceLabel) {
   const n = series.length;
   const W = 358;
   const left = 26;
@@ -561,7 +1054,7 @@ function recoveryChart(series, usual) {
   const scored = pts.filter(Boolean);
   const lows = [...scored].sort((a, b) => a[2] - b[2]).slice(0, Math.min(3, scored.length));
   const usualLine = usual != null ? `<line x1="${left}" y1="${y(usual)}" x2="${W}" y2="${y(usual)}" stroke="var(--muted)" stroke-dasharray="4 4" stroke-width="1"/>` : "";
-  return `<svg class="chart" viewBox="0 0 ${W} 120" role="img" aria-label="Next-morning recovery for each day${lows[0] ? `, lowest ${lows[0][2]} percent` : ""}">
+  return `<svg class="chart" viewBox="0 0 ${W} 120" role="img" aria-label="Next-morning ${esc(sourceLabel)} for each day${lows[0] ? `, lowest ${lows[0][2]} percent` : ""}">
     <line x1="${left}" y1="20" x2="${W}" y2="20" stroke="var(--line)"/>
     <line x1="${left}" y1="60" x2="${W}" y2="60" stroke="var(--line)"/>
     <line x1="${left}" y1="100" x2="${W}" y2="100" stroke="var(--line-2)"/>
@@ -602,7 +1095,7 @@ function renderDates(v) {
   const w = v.wearable;
   const r = v.range;
   const e = v.effect;
-  const R = w.readinessLabel.toLowerCase();
+  const R = scoreLabel(w);
   const s = r.summary;
   let headline;
   let lead;
@@ -613,12 +1106,12 @@ function renderDates(v) {
         : e.cost <= -3
           ? `You recovered better after heavy days here, by ${-e.cost} points.`
           : `Heavy days barely moved your ${R} here.`;
-    lead = `After ${e.heavyHours}+ hours or ${e.heavyMeetings}+ meetings, the next morning averaged ${e.heavy.nextRecovery}%. After lighter days it averaged ${e.lighter.nextRecovery}%.${
+    lead = `After ${e.heavyHours}+ hours or ${e.heavyMeetings}+ meetings, the next morning averaged ${e.heavy.nextRecovery}% ${R}. After lighter days it averaged ${e.lighter.nextRecovery}%.${
       e.heavy.days < 3 || e.lighter.days < 3 ? " Only a few days, so treat this as a hint." : ""
     }`;
   } else if (s.meetingCount) {
     headline = `${plural(s.meetingCount, "meeting")} across ${plural(s.daysWithMeetings, "day")}.`;
-    lead = r.recovery.nReadiness ? `No heavy days to compare in this range.` : `No ${w.label} scores in this range yet.`;
+    lead = w.source ? (r.recovery.nReadiness ? "No heavy days to compare in this range." : `No ${w.label} scores in this range yet.`) : "";
   } else {
     headline = "No meetings in this range.";
     lead = "";
@@ -626,8 +1119,11 @@ function renderDates(v) {
   const stats = [
     ["Meetings", `${s.meetingCount} · ${hoursText(s.totalDurationS)}`],
     ["After 6 pm", String(s.afterHoursCount)],
-    [`Avg ${R}`, r.recovery.avgReadinessScore == null ? "—" : `${Math.round(r.recovery.avgReadinessScore)}%`],
-    ["Avg sleep", r.recovery.avgSleepScore == null ? "—" : `${Math.round(r.recovery.avgSleepScore)}%`],
+    ...v.morningScores.map((score) => [
+      `Avg ${scoreLabel(score)}`,
+      score.average == null ? "—" : `${Math.round(score.average)}%${score.usual.recovery == null ? "" : ` · usual ${score.usual.recovery}%`}`,
+    ]),
+    ...(w.source ? [[`Avg sleep (${w.label})`, r.recovery.avgSleepScore == null ? "—" : `${Math.round(r.recovery.avgSleepScore)}%`]] : []),
   ]
     .map(([k, val]) => `<div class="stat"><p class="kicker">${esc(k)}</p><b>${esc(val)}</b></div>`)
     .join("");
@@ -639,7 +1135,7 @@ function renderDates(v) {
             const bd = band(c.nextRecovery, w);
             return `<button type="button" class="rowlink" data-goto-day="${esc(c.day)}">
               <span class="w"><b>${esc(fmtDay(c.day))}</b><small>${esc(plural(c.meetingCount, "meeting"))} · ${c.meetingHours} h${c.afterHours ? ` · ${c.afterHours} after 6 pm` : ""}</small></span>
-              <span class="end"><b>${c.nextRecovery}%</b><span class="band-${bd.cls}">${esc(bd.word)} next morning</span></span>
+              <span class="end"><b>${c.nextRecovery}%</b><span class="band-${bd.cls}">${esc(bd.word)} · ${esc(R)}</span></span>
             </button>`;
           })
           .join("")}</section>`
@@ -668,99 +1164,148 @@ function renderDates(v) {
       <div class="stats">${stats}</div>
     </section>
     <section class="card" aria-labelledby="ch-h">
-      <h2 class="kicker" id="ch-h">Meetings, then next-morning ${esc(R)}</h2>
+      <h2 class="kicker" id="ch-h">${w.source ? `Meetings, then next-morning ${esc(R)}` : "Meeting hours"}</h2>
+      ${w.source ? `
       <p class="chart-label">Next-morning ${esc(R)}, %${v.usual.recovery != null ? `. Dashed line is your usual ${v.usual.recovery}%.` : ""}</p>
-      ${recoveryChart(v.series, v.usual.recovery)}
-      <p class="chart-label">Hours of meetings that day</p>
+      ${recoveryChart(v.series, v.usual.recovery, R)}
+      <p class="chart-label">Hours of meetings that day</p>` : ""}
       ${hoursChart(v.series)}
     </section>
     ${costly}
     ${people}
     ${w.hasIntradayHr && v.hits?.length ? hitsCard(v.hits, w, "Meetings that spiked") : ""}
-    <p class="foot">${esc(syncLine())}</p>
+    ${syncFoot()}
   `);
 }
 
 /* ---------- People ---------- */
 
-function renderPeople(v) {
-  const w = v.wearable;
-  const byEmail = new Map();
-  for (const d of v.range?.days ?? []) {
-    for (const m of d.meetings ?? []) {
-      for (const a of m.attendees ?? []) {
-        const p = byEmail.get(a.email) ?? { email: a.email, name: a.name, meetings: 0, days: new Map() };
-        p.meetings += 1;
-        if (!p.name && a.name) p.name = a.name;
-        p.days.set(d.day, d.nextMorning?.readinessScore ?? null);
-        byEmail.set(a.email, p);
-      }
-    }
-  }
-  const people = [...byEmail.values()]
-    .map((p) => {
-      const scores = [...p.days.values()].filter((x) => x != null);
-      return { ...p, avg: scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null, n: scores.length };
-    })
-    .sort((a, b) => b.meetings - a.meetings || (a.name || a.email).localeCompare(b.name || b.email))
-    .slice(0, 30);
-  const u = v.usual.recovery;
+function peopleScope() {
+  const { start, end } = peopleRangeDates(state.peopleRange, todayET());
+  const label = PEOPLE_PRESETS[state.peopleRange.preset]?.[1] ?? rangeLabel(start, end);
+  return { start, end, label };
+}
+
+function personHref(email) {
+  return `#person/${encodeURIComponent(email)}`;
+}
+
+async function findPeople(query, signal) {
+  const key = query.normalize("NFC").toLowerCase();
+  const cached = peopleSearchCache.get(key);
+  if (cached && Date.now() - cached.at < CACHE_MS) return cached.people;
+  const { people } = await api(`/api/people/search?${new URLSearchParams({ q: query })}`, { signal });
+  peopleSearchCache.delete(key);
+  peopleSearchCache.set(key, { at: Date.now(), people });
+  if (peopleSearchCache.size > 40) peopleSearchCache.delete(peopleSearchCache.keys().next().value);
+  return people;
+}
+
+let personPageSize = 40;
+
+function showPeopleShell(path, range) {
+  const existing = qs("#people-results");
+  if (existing?.dataset.path === path && existing.dataset.preset === state.peopleRange.preset) return;
+  const isPerson = state.tab === "person";
+  personPageSize = 40;
   screen(`
-    <h1>People</h1>
-    <p class="lead">Who you met in the last 28 days, and how you woke up the morning after.${u != null ? ` Your usual is ${u}%.` : ""}</p>
-    <div class="list">${
-      people.length
-        ? people
-            .map((p) => {
-              const bd = band(p.avg, w);
-              return `<a class="rowlink" href="#person/${encodeURIComponent(p.email)}">
-                <span class="avatar" aria-hidden="true">${esc(initials(p.name, p.email))}</span>
-                <span class="w"><b>${esc(p.name || p.email)}</b><small>${esc(plural(p.meetings, "meeting"))} on ${esc(plural(p.days.size, "day"))}</small></span>
-                <span class="end">${p.avg != null ? `<b>${p.avg}%</b><span class="band-${bd.cls}">next morning</span>` : `<span class="status-off">no scores</span>`}</span>
-              </a>`;
-            })
-            .join("")
-        : `<p class="empty">No meetings with other people in the last 28 days.</p>`
-    }</div>
+    ${isPerson ? '<a class="link" href="#people">‹ People</a>' : `<h1>People</h1>${peopleSearchHtml}`}
+    ${peopleRangeHtml(state.peopleRange, range.start, range.end)}
+    <div class="people-results" id="people-results">
+      <p class="placeholder">Loading ${esc(range.label.toLowerCase())}…</p>
+    </div>
   `);
+  qs("#people-results").dataset.path = path;
+  qs("#people-results").dataset.preset = state.peopleRange.preset;
+  if (!isPerson) initPeopleSearch(qs(".people-search"), findPeople, personHref);
+}
+
+function renderPeople(v) {
+  const { wearable, people, usualRecovery } = v;
+  qs("#people-results").innerHTML = `
+    <p class="kicker">${esc(peopleScope().label)}</p>
+    ${wearable.source ? `<p class="lead">Who you met and how you woke up the morning after.${usualRecovery != null ? ` Your usual ${esc(scoreLabel(wearable))} is ${usualRecovery}%.` : ""}</p>` : ""}
+    <div class="list">${people.length
+      ? people.map((p) => {
+          const bd = band(p.avg, wearable);
+          return `<a class="rowlink" href="${personHref(p.email)}">
+            <span class="avatar" aria-hidden="true">${esc(initials(p.name, p.email))}</span>
+            <span class="w"><b>${esc(p.name || p.email)}</b><small>${plural(p.meetings, "meeting")} on ${plural(p.days, "day")}</small></span>
+            ${wearable.source ? `<span class="end">${p.avg != null ? `<b>${p.avg}%</b><span class="band-${bd.cls}">${esc(scoreLabel(wearable))}</span>` : '<span class="status-off">no scores</span>'}</span>` : ""}
+          </a>`;
+        }).join("")
+      : '<p class="empty">No meetings with other people in this range.</p>'}
+    </div>
+  `;
+}
+
+/** Heart rate in meetings with this person, from the per-meeting readings. */
+function personHrLine(p) {
+  return (p.trendsByHrSource ?? []).filter((t) => t.withCoverage).map((t) => {
+    const bits = [
+      `${t.source} heart rate in ${plural(t.withCoverage, "meeting")}${t.medianAvgBpm != null ? `: median ${Math.round(t.medianAvgBpm)} bpm` : ""}`,
+    ];
+    if (t.source !== "WHOOP + Oura") {
+      bits.push(`${t.elevated} elevated, ${t.watching} worth watching, ${t.restored} restored`);
+    }
+    const points = t.spark ?? [];
+    const step = Math.max(1, Math.ceil(points.length / 120));
+    const spark = points.filter((_, i) => i % step === 0).reverse();
+    const line = spark.length > 1 ? sparkline(spark.map((bpm, i) => ({ t: new Date(i * 60_000).toISOString(), bpm }))) : "";
+    return `<p class="lead">${esc(bits.join(". "))}.${t.badge ? ` <b>${esc(t.badge)}</b>.` : ""}</p>${line}`;
+  }).join("");
 }
 
 function renderPerson(p) {
-  const w = state.wearable;
-  const R = (w?.readinessLabel ?? "Recovery").toLowerCase();
+  const w = p.wearable || state.wearable;
+  const R = w ? scoreLabel(w) : "Morning score";
   const meetings = p.meetings ?? [];
   const byDay = new Map();
   for (const m of meetings) if (m.nextReadinessScore != null) byDay.set(m.day, m.nextReadinessScore);
   const scores = [...byDay.values()];
   const avg = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
-  screen(`
-    <a class="link" href="#people">‹ People</a>
+  qs("#people-results").innerHTML = `
     <section class="card">
-      <p class="kicker">Last 60 days</p>
+      <p class="kicker">${esc(peopleScope().label)}</p>
       <h1>${esc(p.name || p.email)}</h1>
       <p class="lead">${esc(plural(meetings.length, "meeting"))}.${
         avg != null ? ` On mornings after a meeting with them you woke at ${avg}% ${esc(R)} on average, over ${plural(scores.length, "morning")}.` : ""
       }${scores.length && scores.length < 4 ? " Only a few mornings, so this is a hint, not a pattern." : ""}</p>
+      ${personHrLine(p)}
     </section>
-    <section class="card"><p class="kicker">Meetings</p><div class="mlist">${meetings
+    <section class="card"><p class="kicker">Meetings</p><div class="mlist">${meetings.slice(0, personPageSize)
       .map((m) => {
         const bd = band(m.nextReadinessScore, w);
+        const hr = m.hrStress;
+        const showHr = w?.hasIntradayHr;
+        const hrBit = showHr && hr?.coverage === "ok" && hr.meanBpm != null ? ` · ${meetingHrLabel(hr)} ${Math.round(hr.meanBpm)} bpm` : "";
+        const pill = showHr
+          ? zonePill(hr)
+          : m.nextReadinessScore != null
+            ? `<span class="pill ${bd.cls}">${m.nextReadinessScore}% · ${esc(R)}</span>`
+            : w?.source ? `<span class="pill none">No score</span>` : "";
         return `<button type="button" class="mrow" data-goto-day="${esc(m.day)}">
           <span class="t">${esc(shortDay(m.day))}</span>
-          <span class="w"><b>${esc(m.title || "Untitled")}</b><small>${esc(clockFromLocal(m.startLocal))}</small></span>
-          ${m.nextReadinessScore != null ? `<span class="pill ${bd.cls}">${m.nextReadinessScore}%</span>` : `<span class="pill none">No score</span>`}
+          <span class="w"><b>${esc(m.title || "Untitled")}</b><small>${esc(clockFromLocal(m.startLocal))}${esc(hrBit)}${
+            showHr && m.nextReadinessScore != null ? ` · ${m.nextReadinessScore}% ${esc(R)}` : ""
+          }</small></span>
+          ${pill}
         </button>`;
       })
-      .join("")}</div></section>
-  `);
+      .join("")}</div>
+      ${!meetings.length ? '<p class="empty">No meetings with this person in this range.</p>' : ""}
+      ${meetings.length > personPageSize ? '<button type="button" class="secondary" data-action="person-more">Show more meetings</button>' : ""}
+    </section>
+  `;
 }
 
 /* ---------- More ---------- */
 
 function renderMore() {
   const s = state.status ?? {};
-  const w = state.wearable;
-  const a = state.ask;
+  const a = state.askInfo;
+  const display = state.sourceDisplay;
+  const saving = state.sourceDisplaySaving;
   const row = (title, sub, status, cls, attrs) =>
     `<${attrs.href ? `a href="${attrs.href}"` : `button type="button" data-action="${attrs.action}"`} class="rowlink">
       <span class="w"><b>${esc(title)}</b><small>${esc(sub)}</small></span>
@@ -770,21 +1315,38 @@ function renderMore() {
     <h1>More</h1>
     <p class="kicker section-k">Data</p>
     <div class="list">
-      ${row("Sync calendar", syncLine() || "Pull the last 3 weeks and the next week", "", "", { action: "sync" })}
+      ${row("Sync calendar", calSyncText() || "Re-read the last 3 weeks and the next month", "", "", { action: "sync" })}
     </div>
+    <h2 class="kicker section-k" id="source-display-heading">Show data</h2>
+    <div class="list" role="group" aria-labelledby="source-display-heading">
+      ${[["oura", "Oura"], ["whoop", "WHOOP"]].map(([source, label]) => `
+        <label class="rowlink source-toggle">
+          <span class="w"><b>${label}</b></span>
+          <input type="checkbox" role="switch" data-display-source="${source}" ${display?.[source] ? "checked" : ""} ${!display || saving ? "disabled" : ""}>
+        </label>`).join("")}
+    </div>
+    <p class="lead source-display-note">Data keeps syncing when hidden.</p>
+    ${saving || state.sourceDisplayError ? `<p class="lead" role="status">${esc(saving ? "Saving…" : state.sourceDisplayError)}</p>` : ""}
     <p class="kicker section-k">Connections</p>
     <div class="list">
-      ${row(w?.label ?? "Wearable", w?.strainLabel ? "Recovery, sleep, strain" : "Readiness, sleep, heart-rate", s.wearableConnected ? "Connected" : "Connect", s.wearableConnected ? "status-ok" : "status-todo", { href: "/setup" })}
+      ${(s.wearables ?? []).map((wearable) => {
+        const history = wearable.history?.min
+          ? `Last data ${fmtDay(wearable.lastDataDay)} · History ${wearable.history.min} to ${wearable.history.max}`
+          : "No data yet";
+        return row(wearable.label, history, wearable.connected ? "Connected" : "Connect",
+          wearable.connected ? "status-ok" : "status-todo", { href: `/setup?wearable=${wearable.source}` });
+      }).join("")}
       ${row("Google Calendar", "Read-only", s.googleConnected ? "Connected" : "Connect", s.googleConnected ? "status-ok" : "status-todo", { href: "/setup" })}
     </div>
     <p class="kicker section-k">Ask your data</p>
     <div class="list">
-      ${row("AI key", "Chat with your meetings and recovery", a?.connected ? `Key …${a.tail}` : a && !a.available ? "Not set up" : "Add key", a?.connected ? "status-ok" : "status-todo", { href: "#ask" })}
+      ${row("AI key", "Chat with your data", a?.connected ? `Key …${a.tail}` : a && !a.available ? "Not set up" : "Add key", a?.connected ? "status-ok" : "status-todo", { action: "open-ask" })}
     </div>
     <p class="kicker section-k">Setup</p>
     <div class="list">
       ${row("Setup guide", "Keys, redirect links, first import", "", "", { href: "/setup" })}
       ${row("Privacy", "What is stored and where", "", "", { action: "privacy" })}
+      ${canOfferInstall() ? row("Install app", "Add Meetspike to your Home Screen", "", "", { action: "install" }) : ""}
     </div>
     ${
       state.showPrivacy
@@ -794,195 +1356,78 @@ function renderMore() {
         : ""
     }
     <p id="more-msg" class="lead" role="status"></p>
+    <p class="foot" id="app-version">${state.appVersion ? `Version ${esc(state.appVersion)}` : ""}</p>
   `);
+  if (state.appVersion === undefined) {
+    state.appVersion = null;
+    appVersion().then((v) => {
+      state.appVersion = v ?? undefined;
+      const el = qs("#app-version");
+      if (el && v) el.textContent = `Version ${v}`;
+    });
+  }
+}
+
+async function changeSourceDisplay(source, enabled) {
+  if (state.sourceDisplaySaving || !state.sourceDisplay) return;
+  state.sourceDisplaySaving = true;
+  state.sourceDisplayError = "";
+  qs("#screen").querySelectorAll("[data-display-source]").forEach((input) => { input.disabled = true; });
+  try {
+    const display = await api(SOURCE_DISPLAY_PATH, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ [source]: enabled }),
+    });
+    state.sourceDisplay = display;
+    setAskSourceDisplay(display);
+    renderToken++;
+    invalidateDisplayViews();
+    state.openMeeting = undefined;
+  } catch (err) {
+    if (err instanceof AccessNeededError) qs("#access").hidden = false;
+    state.sourceDisplayError = `Could not save display setting. ${err.message}`;
+  } finally {
+    state.sourceDisplaySaving = false;
+    if (state.tab === "more") {
+      renderMore();
+      qs(`[data-display-source="${source}"]`)?.focus({ preventScroll: true });
+    } else {
+      render();
+    }
+  }
 }
 
 async function syncCalendar() {
   const msg = qs("#more-msg");
-  const today = todayET();
   if (msg) msg.textContent = "Syncing your calendar…";
+  const r = await resyncCalendar({ full: true });
+  const m = qs("#more-msg");
+  if (!m) return;
+  if (r?.pending) {
+    m.textContent = "Still syncing in the background. New meetings show up when it finishes.";
+  } else if (r) {
+    const changed = (r.written ?? 0) + (r.removed ?? 0);
+    m.textContent = `Synced just now. ${plural(changed, "meeting")} updated.`;
+  } else if (state.calSync?.error) m.textContent = `Calendar sync failed: ${state.calSync.error}`;
+}
+
+/* ---------- Ask (the popup lives in ask-panel.js) ---------- */
+
+/** Key status for the More screen. The popup loads its own. */
+async function loadAskInfo() {
   try {
-    const r = await api("/api/calendar/sync", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ mode: "live", startDay: addDays(today, -21), endDay: addDays(today, 7) }),
-    });
-    memory.clear();
-    saveStore();
-    if (msg) msg.textContent = `Done. ${plural(r.written ?? 0, "meeting")} updated.`;
+    state.askInfo = await api("/api/ask/status");
   } catch (err) {
     if (err instanceof AccessNeededError) qs("#access").hidden = false;
-    if (msg) msg.textContent = err.message || String(err);
+    state.askInfo = { available: false, connected: false };
   }
+  return state.askInfo;
 }
-
-/* ---------- Ask ---------- */
-
-function loadChat() {
-  try {
-    return JSON.parse(sessionStorage.getItem(CHAT_STORE) || "[]");
-  } catch {
-    return [];
-  }
-}
-
-function saveChat() {
-  try {
-    sessionStorage.setItem(CHAT_STORE, JSON.stringify(state.chat.slice(-30)));
-  } catch {
-    /* ignore */
-  }
-}
-
-/** Just enough Markdown for short answers: paragraphs, bold, bullet lists, pipe tables. */
-function md(text) {
-  const inline = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-  const out = [];
-  const lines = text.replace(/\r/g, "").split("\n");
-  for (let i = 0; i < lines.length; ) {
-    const line = lines[i];
-    if (/^\s*\|.*\|\s*$/.test(line)) {
-      const rows = [];
-      while (i < lines.length && /^\s*\|.*\|\s*$/.test(lines[i])) rows.push(lines[i++]);
-      const cells = rows.filter((r) => !/^\s*\|[\s:|-]+\|\s*$/.test(r)).map((r) => r.trim().slice(1, -1).split("|").map((c) => c.trim()));
-      const [head, ...body] = cells;
-      out.push(
-        `<table><thead><tr>${head.map((c) => `<th>${inline(c)}</th>`).join("")}</tr></thead><tbody>${body
-          .map((r) => `<tr>${r.map((c) => `<td>${inline(c)}</td>`).join("")}</tr>`)
-          .join("")}</tbody></table>`,
-      );
-      continue;
-    }
-    if (/^\s*[-*]\s+/.test(line)) {
-      const items = [];
-      while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])) items.push(lines[i++].replace(/^\s*[-*]\s+/, ""));
-      out.push(`<ul>${items.map((t) => `<li>${inline(t)}</li>`).join("")}</ul>`);
-      continue;
-    }
-    const para = [];
-    while (i < lines.length && lines[i].trim() && !/^\s*[-*]\s+/.test(lines[i]) && !/^\s*\|.*\|\s*$/.test(lines[i])) para.push(lines[i++]);
-    if (para.length) out.push(`<p>${para.map(inline).join("<br>")}</p>`);
-    else i += 1;
-  }
-  return out.join("");
-}
-
-const SUGGESTIONS = [
-  "Which meetings cost me the most this month?",
-  "Is it the number of hours or the people?",
-  "How do days with after-hours calls compare?",
-];
 
 function askScope() {
-  return state.lastScreen === "dates" ? { start: state.start, end: state.end } : null;
-}
-
-function renderAsk() {
-  const a = state.ask;
-  if (!a) {
-    screen(`<p class="placeholder">Loading…</p>`);
-    return;
-  }
-  const head = `<h1>Ask your data</h1>`;
-  if (!a.available) {
-    screen(`${head}<p class="lead">This needs one setting on your Worker first: a secret named AI_KEY_SECRET (any 32 or more random characters). It encrypts your API key. Run this once, then reload:</p>
-      <pre class="card">wrangler secret put AI_KEY_SECRET</pre>`);
-    return;
-  }
-  if (!a.connected || state.replaceKey) {
-    screen(`${head}
-      <p class="lead">Ask things like "which meetings cost me the most this month". Add your own Claude API key: you pay Anthropic directly for what you use.</p>
-      <form class="keyform" data-form="key">
-        <label class="kicker" for="key-in">Claude API key</label>
-        <input id="key-in" name="key" type="password" autocomplete="off" spellcheck="false" placeholder="sk-ant-…" required />
-        <span class="lead">Get one at console.anthropic.com, under API keys.</span>
-        <button type="submit" class="primary">Check and save</button>
-        <p class="error" id="key-err" role="alert" hidden></p>
-      </form>
-      <section class="share-note"><span class="kicker">What is shared</span>
-        <span>Your key is stored encrypted in your own Cloudflare Worker, never in the browser.</span>
-        <span>Each question sends Anthropic the days it needs: dates, meeting titles and times, who attended, and your scores. No email addresses, transcripts or audio.</span>
-      </section>
-      ${a.connected ? `<button type="button" class="link" data-action="cancel-key">Keep the current key</button>` : ""}`);
-    return;
-  }
-  const scope = askScope();
-  const bubbles = state.chat
-    .map((m) => (m.role === "user" ? `<div class="bubble me">${esc(m.content)}</div>` : `<div class="bubble ai">${md(m.content)}</div>`))
-    .join("");
-  screen(`${head}
-    <p class="lead">Using ${scope ? esc(rangeLabel(scope.start, scope.end)) : "your last 60 days"}. Key …${esc(a.tail)} ·
-      <button type="button" class="link" data-action="replace-key">Change</button> ·
-      <button type="button" class="link" data-action="remove-key">Remove</button>
-      ${state.chat.length ? ` · <button type="button" class="link" data-action="clear-chat">Clear chat</button>` : ""}</p>
-    <div class="chat" id="chat">${bubbles}${state.pending ? `<div class="bubble ai pending">Looking at your data…</div>` : ""}</div>
-    ${state.chat.length || state.pending ? "" : `<div class="suggest">${SUGGESTIONS.map((q) => `<button type="button" data-suggest="${esc(q)}">${esc(q)}</button>`).join("")}</div>`}
-    <form class="composer" data-form="ask">
-      <label for="ask-in" class="sr">Your question</label>
-      <input id="ask-in" name="q" type="text" autocomplete="off" placeholder="Ask about your meetings and recovery" ${state.pending ? "disabled" : ""} />
-      <button type="submit" aria-label="Send" ${state.pending ? "disabled" : ""}>↑</button>
-    </form>`);
-  qs("#chat")?.lastElementChild?.scrollIntoView({ block: "nearest" });
-}
-
-async function loadAskStatus(force = false) {
-  if (state.ask && !force) return state.ask;
-  try {
-    state.ask = await api("/api/ask/status");
-  } catch (err) {
-    if (err instanceof AccessNeededError) qs("#access").hidden = false;
-    state.ask = { available: false, connected: false };
-  }
-  return state.ask;
-}
-
-async function sendQuestion(question) {
-  const q = question.trim();
-  if (!q || state.pending) return;
-  const history = state.chat.slice(-12);
-  state.chat.push({ role: "user", content: q });
-  state.pending = true;
-  saveChat();
-  renderAsk();
-  try {
-    const r = await api("/api/ask", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ question: q, history, ...(askScope() ?? {}) }),
-    });
-    state.chat.push({ role: "assistant", content: r.answer + (r.truncated ? "\n\n(The answer was cut short.)" : "") });
-  } catch (err) {
-    if (err.body?.needsKey) {
-      state.ask = { ...state.ask, connected: false };
-      state.chat.pop();
-    } else {
-      state.chat.push({ role: "assistant", content: err instanceof AccessNeededError ? "Your sign-in expired. Reload the page." : err.message || String(err) });
-    }
-  } finally {
-    state.pending = false;
-    saveChat();
-    if (state.tab === "ask") renderAsk();
-  }
-}
-
-async function saveKey(form) {
-  const errEl = qs("#key-err");
-  const btn = form.querySelector("button[type=submit]");
-  const key = form.key.value.trim();
-  errEl.hidden = true;
-  btn.disabled = true;
-  btn.textContent = "Checking…";
-  try {
-    const r = await api("/api/ask/key", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ key }) });
-    state.ask = { ...state.ask, connected: true, tail: r.tail, savedAt: r.savedAt };
-    state.replaceKey = false;
-    renderAsk();
-  } catch (err) {
-    errEl.textContent = err.message || String(err);
-    errEl.hidden = false;
-    btn.disabled = false;
-    btn.textContent = "Check and save";
-  }
+  if (state.tab === "people" || state.tab === "person") return peopleScope();
+  return state.tab === "dates" ? { start: state.start, end: state.end, label: rangeLabel(state.start, state.end) } : null;
 }
 
 /* ---------- Date picker ---------- */
@@ -1037,15 +1482,12 @@ function renderPicker() {
   }
   const complete = Boolean(p.start && p.end);
   const n = complete ? spanDays(p.start, p.end) : 0;
-  const tooLong = n > MAX_RANGE_DAYS;
   const note = !p.start
     ? "Tap a start day, then an end day."
     : !p.end
       ? "Now tap the end day."
-      : tooLong
-        ? `That is ${n} days. Pick up to ${MAX_RANGE_DAYS}.`
-        : `${rangeLabel(p.start, p.end)} · ${plural(n, "day")}`;
-  const ready = complete && !tooLong;
+      : `${rangeLabel(p.start, p.end)} · ${plural(n, "day")}`;
+  const ready = complete;
   const lastMonth = shiftMonth(thisMonth, -1);
   const lastMonthEnd = `${lastMonth}-${String(new Date(Date.UTC(Number(lastMonth.slice(0, 4)), Number(lastMonth.slice(5, 7)), 0)).getUTCDate()).padStart(2, "0")}`;
   const quick = [
@@ -1071,9 +1513,9 @@ function renderPicker() {
       <button type="button" data-month="1" aria-label="Next month" ${p.month >= thisMonth ? "disabled" : ""}>›</button>
     </div>
     <div class="cal">${["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"].map((d) => `<span class="dow" aria-hidden="true">${d}</span>`).join("")}${cells.join("")}</div>
-    <p class="pick-note ${tooLong ? "bad" : ""}" aria-live="polite">${esc(note)}</p>
+    <p class="pick-note" aria-live="polite">${esc(note)}</p>
     <button type="button" class="primary" data-action="pk-apply" ${ready ? "" : "disabled"}>${
-      !complete ? "Pick an end date" : tooLong ? "Too many days" : p.start === p.end ? `Show ${esc(shortDay(p.start))}` : `Show ${plural(n, "day")}`
+      !complete ? "Pick an end date" : p.start === p.end ? `Show ${esc(shortDay(p.start))}` : `Show ${plural(n, "day")}`
     }</button>
   </div>`;
 }
@@ -1106,8 +1548,9 @@ let renderToken = 0;
 
 async function render() {
   const token = ++renderToken;
+  clearTimeout(nextLiveMeetingTimer);
   setTabs();
-  if (state.tab !== "ask") state.lastScreen = state.tab;
+  qs("#screen").dataset.tab = state.tab;
   const fresh = (fn) => (data) => {
     if (token !== renderToken) return;
     noteMeta(data);
@@ -1120,23 +1563,35 @@ async function render() {
     } else if (state.tab === "dates") {
       if (!memory.has(viewPath(state.start, state.end))) screen(`<p class="placeholder">Loading ${esc(rangeLabel(state.start, state.end))}…</p>`);
       await load(viewPath(state.start, state.end), fresh(renderDates));
-    } else if (state.tab === "people") {
-      const t = todayET();
-      await load(viewPath(addDays(t, -27), t), fresh(renderPeople));
-    } else if (state.tab === "person") {
-      screen(`<p class="placeholder">Loading…</p>`);
-      await load(`/api/people/${encodeURIComponent(state.person)}/meetings?days=60`, fresh(renderPerson));
+    } else if (state.tab === "people" || state.tab === "person") {
+      const range = peopleScope();
+      const isPerson = state.tab === "person";
+      const path = `/api/people${isPerson ? `/${encodeURIComponent(state.person)}/meetings` : ""}?start=${range.start}&end=${range.end}${isPerson ? "&compact=1" : ""}`;
+      showPeopleShell(path, range);
+      await load(path, fresh(isPerson ? renderPerson : renderPeople));
     } else if (state.tab === "more") {
       renderMore();
-      if (!state.status) load(viewPath(todayET(), todayET()), fresh(() => state.tab === "more" && renderMore())).catch(() => {});
-      loadAskStatus().then(() => token === renderToken && state.tab === "more" && renderMore());
-    } else if (state.tab === "ask") {
-      renderAsk();
-      await loadAskStatus();
-      if (token === renderToken) renderAsk();
+      load(viewPath(todayET(), todayET()), fresh(renderMore)).catch(async () => {
+        if (token !== renderToken) return;
+        try {
+          const sourceDisplay = await api(SOURCE_DISPLAY_PATH);
+          if (token === renderToken) noteMeta({ sourceDisplay });
+        } catch (err) {
+          if (token !== renderToken) return;
+          if (err instanceof AccessNeededError) qs("#access").hidden = false;
+          state.sourceDisplayError = "Could not load display settings.";
+        }
+        if (token === renderToken) renderMore();
+      });
+      loadAskInfo().then(() => token === renderToken && state.tab === "more" && renderMore());
     }
   } catch (err) {
-    if (token === renderToken) showError(err);
+    if (token === renderToken) {
+      const results = qs("#people-results");
+      if (results && !(err instanceof AccessNeededError)) {
+        results.innerHTML = `<p class="error">${esc(err.message)}</p><button type="button" class="secondary" data-action="retry">Try again</button>`;
+      } else showError(err);
+    }
   }
 }
 
@@ -1146,7 +1601,7 @@ function stepDates(dir) {
   if (state.tab === "today") {
     const next = addDays(state.day, dir);
     if (next > todayET()) return;
-    go({ day: next, openMeeting: null });
+    go({ day: next, openMeeting: undefined });
   } else if (state.tab === "dates") {
     const n = spanDays(state.start, state.end);
     let start = addDays(state.start, dir * n);
@@ -1160,7 +1615,7 @@ function stepDates(dir) {
 }
 
 document.addEventListener("click", (ev) => {
-  const t = ev.target.closest("[data-action],[data-meeting],[data-goto-day],[data-pick],[data-quick],[data-month],[data-field],[data-suggest],[data-tab]");
+  const t = ev.target.closest("[data-action],[data-meeting],[data-goto-day],[data-pick],[data-quick],[data-month],[data-field],a[data-tab]");
   if (!t) {
     if (ev.target === qs("#sheet")) closePicker();
     return;
@@ -1168,7 +1623,8 @@ document.addEventListener("click", (ev) => {
   if (t.dataset.tab) {
     ev.preventDefault();
     const tab = t.dataset.tab;
-    go({ tab });
+    if (tab === "ask") openAsk();
+    else go({ tab });
     return;
   }
   const a = t.dataset.action;
@@ -1179,31 +1635,29 @@ document.addEventListener("click", (ev) => {
   else if (a === "pk-clear") Object.assign(state.picker, { start: null, end: null, editing: null }) && renderPicker();
   else if (a === "pk-apply") applyPicker();
   else if (a === "retry") render();
+  else if (a === "person-more") {
+    const results = qs("#people-results");
+    const model = memory.get(results.dataset.path)?.data;
+    if (model) {
+      const firstNew = personPageSize;
+      personPageSize += 40;
+      renderPerson(model);
+      results.querySelectorAll(".mrow")[firstNew]?.focus();
+    }
+  }
+  else if (a === "mmenu") toggleMeetingMenu(t.dataset.id);
+  else if (a === "mact") runMeetingAction(t.dataset.act, t.dataset.id);
   else if (a === "reload") location.reload();
   else if (a === "sync") syncCalendar();
+  else if (a === "install") openInstallSheet();
+  else if (a === "resync") resyncCalendar();
   else if (a === "privacy") {
     state.showPrivacy = !state.showPrivacy;
     renderMore();
-  } else if (a === "replace-key") {
-    state.replaceKey = true;
-    renderAsk();
-  } else if (a === "cancel-key") {
-    state.replaceKey = false;
-    renderAsk();
-  } else if (a === "remove-key") {
-    api("/api/ask/key", { method: "DELETE" })
-      .then(() => {
-        state.ask = { ...state.ask, connected: false, tail: null };
-        renderAsk();
-      })
-      .catch((err) => alert(err.message || String(err)));
-  } else if (a === "clear-chat") {
-    state.chat = [];
-    saveChat();
-    renderAsk();
-  } else if (t.dataset.meeting) {
-    if (!state.wearable?.hasIntradayHr) return;
-    state.openMeeting = state.openMeeting === t.dataset.meeting ? null : t.dataset.meeting;
+  } else if (a === "open-ask") openAsk();
+  else if (t.dataset.meeting) {
+    state.openMeeting = t.getAttribute("aria-expanded") === "true" ? null : t.dataset.meeting;
+    state.meetingUi = null;
     render();
   } else if (t.dataset.gotoDay) go({ tab: "today", day: t.dataset.gotoDay, openMeeting: null });
   else if (t.dataset.pick) pickDay(t.dataset.pick);
@@ -1220,35 +1674,100 @@ document.addEventListener("click", (ev) => {
     p.editing = t.dataset.field;
     p.month = (t.dataset.field === "start" ? p.start : p.end || p.start)?.slice(0, 7) ?? p.month;
     renderPicker();
-  } else if (t.dataset.suggest) sendQuestion(t.dataset.suggest);
+  }
 });
 
-document.addEventListener("submit", (ev) => {
-  const form = ev.target.closest("[data-form]");
-  if (!form) return;
-  ev.preventDefault();
-  if (form.dataset.form === "ask") {
-    const q = form.q.value;
-    form.q.value = "";
-    sendQuestion(q);
-  } else if (form.dataset.form === "key") saveKey(form);
+document.addEventListener("change", (event) => {
+  const source = event.target.dataset.displaySource;
+  if (source === "oura" || source === "whoop") {
+    changeSourceDisplay(source, event.target.checked);
+    return;
+  }
+  if (event.target.id !== "people-range") return;
+  const preset = event.target.value;
+  if (preset === "custom") {
+    const form = qs("#people-custom-range");
+    form.hidden = false;
+    form.elements.start.focus();
+  } else {
+    go({ peopleRange: { preset } });
+    qs("#people-range")?.focus({ preventScroll: true });
+  }
+});
+
+document.addEventListener("submit", (event) => {
+  const form = event.target;
+  if (form.classList?.contains("mtimes")) {
+    event.preventDefault();
+    const picked = readTimes(form, dayTimeZone(), dayMeeting(form.dataset.id));
+    if (picked.error) {
+      // Keep what was typed, so fixing one field does not mean typing both again.
+      state.meetingUi = { ...state.meetingUi, error: picked.error, typed: { start: form.elements.start.value, end: form.elements.end.value } };
+      render();
+    } else {
+      // A save the server refuses keeps the typed times too.
+      state.meetingUi = { ...state.meetingUi, typed: { start: form.elements.start.value, end: form.elements.end.value } };
+      commitMeetingChange(form.dataset.id, picked.body);
+    }
+    return;
+  }
+  if (form.id !== "people-custom-range") return;
+  event.preventDefault();
+  const start = form.elements.start.value;
+  const end = form.elements.end.value;
+  if (!validPeopleDates(start, end)) {
+    form.elements.end.setCustomValidity("Choose a valid date on or after the start date.");
+    form.elements.end.reportValidity();
+    return;
+  }
+  go({ peopleRange: { preset: "custom", start, end } });
+  qs("#people-range")?.focus({ preventScroll: true });
+});
+
+document.addEventListener("input", (event) => {
+  if (event.target.form?.id === "people-custom-range") event.target.form.elements.end.setCustomValidity("");
 });
 
 document.addEventListener("keydown", (ev) => {
   if (ev.key === "Escape" && state.picker) closePicker();
+  else if (ev.key === "Escape" && state.meetingUi && !state.meetingUi.busy) {
+    const id = state.meetingUi.id;
+    state.meetingUi = null;
+    render().then(() => qs(`.mmenu[data-id="${CSS.escape(id)}"]`)?.focus());
+  }
 });
 
 window.addEventListener("popstate", () => {
   readLocation();
+  if (state.openAskOnLoad) {
+    state.openAskOnLoad = false;
+    openAsk();
+  }
   render();
 });
 
 // Coming back to the tab after a while: refresh what is on screen.
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible" && ["today", "dates", "people"].includes(state.tab)) render();
+  if (document.visibilityState !== "visible") return stopLivePanel();
+  invalidateDisplayViews();
+  if (state.tab === "person" || state.tab === "people") {
+    const results = qs("#people-results");
+    if (results) results.dataset.path = "";
+  }
+  render();
+  autoSync();
 });
 
-loadStore();
+initPwa();
+initAskPanel({ getScope: askScope });
+initPullToRefresh({ enabled: isInstalledApp, tab: () => state.tab, onRefresh: pullRefresh });
 readLocation();
 writeLocation(true);
+if (state.openAskOnLoad) {
+  state.openAskOnLoad = false;
+  openAsk();
+}
 render();
+// A refresh (or opening the installed app) also asks Google for anything new,
+// then redraws. Without this a reload only re-read what was already stored.
+autoSync();

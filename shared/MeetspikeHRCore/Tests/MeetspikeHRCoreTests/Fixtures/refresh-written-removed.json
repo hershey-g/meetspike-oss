@@ -1,0 +1,12 @@
+{
+  "calendar": {
+    "ok": true,
+    "sync": "incremental",
+    "written": 3,
+    "removed": 1
+  },
+  "oura": {
+    "ok": true
+  },
+  "syncedAt": "2026-11-24T14:10:00.000Z"
+}

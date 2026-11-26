@@ -5,6 +5,7 @@
  * DayRow[] with buildDayRows, and everything here works from that. Nothing
  * names a wearable brand; a missing score is null and is left out of medians.
  */
+import { historyDays } from "./date-range.ts";
 import type { CalendarEventRow } from "../types.ts";
 import type { OuraDaySlice } from "../sources/calendar/join.ts";
 import { addCalendarDays, calendarDayInZone } from "./time.ts";
@@ -57,7 +58,7 @@ function localHour(event: Pick<CalendarEventRow, "start_local">): number | null 
   return m ? Number(m[1]) : null;
 }
 
-/** One row per calendar day from `from` to `to` inclusive, empty days included. */
+/** Inclusive day rows. Extra-wide ranges omit empty days. */
 export function buildDayRows(
   events: CalendarEventRow[],
   byDay: Map<string, OuraDaySlice>,
@@ -67,7 +68,12 @@ export function buildDayRows(
 ): DayRow[] {
   const rows = new Map<string, DayRow>();
   const people = new Map<string, Map<string, { email: string; name: string | null; meetings: number }>>();
-  for (let d = from; d <= to; d = addCalendarDays(d, 1)) {
+  const datedEvents = events.map((event) => ({ event, day: calendarDayInZone(event.start_utc, timeZone) }));
+  const dateList = historyDays(from, to, [
+    ...datedEvents.map(({ day }) => day),
+    ...[...byDay.keys()].flatMap((day) => [day, addCalendarDays(day, -1)]),
+  ]);
+  for (const d of dateList) {
     rows.set(d, {
       day: d,
       weekday: isWeekday(d),
@@ -81,10 +87,9 @@ export function buildDayRows(
     people.set(d, new Map());
   }
   const seen = new Set<string>();
-  for (const e of events) {
+  for (const { event: e, day } of datedEvents) {
     if (seen.has(e.id)) continue;
     seen.add(e.id);
-    const day = calendarDayInZone(e.start_utc, timeZone);
     const row = rows.get(day);
     if (!row) continue;
     row.meetingCount += 1;
@@ -180,6 +185,43 @@ export function heavyEffect(rows: DayRow[]): HeavyEffect {
     heavy: { days: heavy.length, nextRecovery: h },
     lighter: { days: lighter.length, nextRecovery: l },
     cost: h != null && l != null ? l - h : null,
+  };
+}
+
+function hasScore(s: DaySlice | null | undefined): boolean {
+  return Boolean(s) && [s!.readinessScore, s!.sleepScore, s!.avgHrv, s!.lowestHr, s!.strain]
+    .some((v) => typeof v === "number" && Number.isFinite(v));
+}
+
+export type AllHistoryBaseline = {
+  usual: Usual;
+  effect: HeavyEffect & { from: string; to: string };
+};
+
+/**
+ * One wearable's numbers over all history, for Ask. `rows` run from the history start to
+ * today and are built from this wearable's own scores only.
+ * - Score medians use every day this wearable scored; from/to are its first and last scored day.
+ * - Meeting hours and the heavy-day comparison only use days from the first meeting's day to
+ *   the last finished day (before `today`), so days before the calendar was connected do not
+ *   count as light days and today never counts.
+ */
+export function buildAllHistoryBaseline(rows: DayRow[], firstMeetingDay: string | null, today: string): AllHistoryBaseline {
+  const inWindow = rows.filter((r) => r.day <= today);
+  const scored = inWindow.filter((r) => hasScore(r.morning));
+  const meetingRows = firstMeetingDay ? inWindow.filter((r) => r.day >= firstMeetingDay && r.day < today) : [];
+  const usual = buildUsual(inWindow);
+  const meetings = buildUsual(meetingRows);
+  const compared = meetingRows.filter((r) => r.next?.readinessScore != null);
+  return {
+    usual: {
+      ...usual,
+      from: scored[0]?.day ?? "",
+      to: scored[scored.length - 1]?.day ?? "",
+      meetingHours: meetings.meetingHours,
+      afterHours: meetings.afterHours,
+    },
+    effect: { ...heavyEffect(meetingRows), from: compared[0]?.day ?? "", to: compared[compared.length - 1]?.day ?? "" },
   };
 }
 

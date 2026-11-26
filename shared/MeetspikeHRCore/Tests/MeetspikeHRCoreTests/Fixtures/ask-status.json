@@ -1,0 +1,12 @@
+{
+  "ok": true,
+  "available": true,
+  "connected": true,
+  "tail": "a1b2",
+  "savedAt": "2026-11-01T12:00:00.000Z",
+  "model": "claude-opus-5-5",
+  "sourceDisplay": {
+    "oura": true,
+    "whoop": true
+  }
+}

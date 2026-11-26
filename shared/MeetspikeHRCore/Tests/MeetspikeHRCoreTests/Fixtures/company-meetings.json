@@ -1,0 +1,347 @@
+{
+  "ok": true,
+  "domain": "northwind.example",
+  "name": "Northwind",
+  "from": "2026-10-28",
+  "to": "2026-11-24",
+  "timeZone": "America/New_York",
+  "wearable": {
+    "source": "whoop",
+    "label": "WHOOP",
+    "hasIntradayHr": true,
+    "hrSource": "whoop_web",
+    "ouraHr": false,
+    "whoopWebHr": true,
+    "readinessLabel": "Recovery",
+    "strainLabel": "Strain",
+    "strainMax": 21,
+    "tagline": "Calendar × WHOOP heart rate and recovery",
+    "note": "Heart rate during the meeting is your WHOOP strap's, minute by minute."
+  },
+  "sourceDisplay": {
+    "oura": true,
+    "whoop": true
+  },
+  "grain": {
+    "join": "work day D to WHOOP recovery on morning D+1"
+  },
+  "methodNote": "Heart rate during the meeting is your WHOOP strap's, minute by minute.",
+  "trend": {
+    "meetingCount": 11,
+    "withCoverage": 9,
+    "elevated": 5,
+    "watching": 3,
+    "restored": 1,
+    "missingHr": 2,
+    "medianAvgBpm": 84,
+    "spark": [
+      91,
+      79,
+      88,
+      74,
+      85,
+      80,
+      90,
+      77,
+      86
+    ],
+    "badge": "often spikes you",
+    "badgeNote": "5 of 9 meetings with heart-rate scores landed Elevated."
+  },
+  "trendsByHrSource": [
+    {
+      "source": "WHOOP",
+      "meetingCount": 11,
+      "withCoverage": 9,
+      "elevated": 5,
+      "watching": 3,
+      "restored": 1,
+      "missingHr": 2,
+      "medianAvgBpm": 84,
+      "spark": [
+        91,
+        79,
+        88,
+        74,
+        85,
+        80,
+        90,
+        77,
+        86
+      ],
+      "badge": "often spikes you",
+      "badgeNote": "5 of 9 meetings with heart-rate scores landed Elevated."
+    }
+  ],
+  "people": [
+    {
+      "email": "dana.sample@example.com",
+      "name": "Dana Sample",
+      "meetings": 4
+    },
+    {
+      "email": "riley.demo@example.com",
+      "name": "Riley Demo",
+      "meetings": 1
+    },
+    {
+      "email": "jordan.fixture@example.com",
+      "name": null,
+      "meetings": 2
+    }
+  ],
+  "meetings": [
+    {
+      "id": "p-0",
+      "title": "1:1 with Dana",
+      "kind": "internal",
+      "day": "2026-11-24",
+      "startUtc": "2026-11-24T20:00:00.000Z",
+      "startLocal": "2026-11-24T15:00:00-05:00",
+      "afterHours": false,
+      "earlyStart": false,
+      "hrStress": {
+        "coverage": "ok",
+        "source": "WHOOP",
+        "gaps": [],
+        "method": "heartrate_proxy",
+        "methodNote": "WHOOP heart rate inside the meeting window.",
+        "sampleCount": 60,
+        "meanBpm": 79,
+        "maxBpm": 92,
+        "dayAwakeMeanBpm": 72,
+        "restingBpm": 55,
+        "elevatedThresholdBpm": 80,
+        "elevatedPct": 30,
+        "elevatedMinutes": 14,
+        "meanVsAwake": 7,
+        "zone": "moderate",
+        "headline": "Worth watching",
+        "story": "Worth watching: heart rate averaged 79 bpm.",
+        "impact": 12.5,
+        "series": [],
+        "partial": null
+      },
+      "nextSleepScore": null,
+      "nextReadinessScore": null,
+      "companies": [
+        {
+          "domain": "northwind.example",
+          "name": "Northwind"
+        }
+      ],
+      "companyAttendees": [
+        {
+          "email": "dana.sample@example.com",
+          "name": "Dana Sample"
+        }
+      ]
+    },
+    {
+      "id": "p-1",
+      "title": "Pipeline review",
+      "kind": "client",
+      "day": "2026-11-20",
+      "startUtc": "2026-11-20T15:30:00.000Z",
+      "startLocal": "2026-11-20T10:30:00-05:00",
+      "afterHours": false,
+      "earlyStart": false,
+      "hrStress": {
+        "coverage": "ok",
+        "source": "WHOOP",
+        "gaps": [],
+        "method": "heartrate_proxy",
+        "methodNote": "WHOOP heart rate inside the meeting window.",
+        "sampleCount": 48,
+        "meanBpm": 91,
+        "maxBpm": 112,
+        "dayAwakeMeanBpm": 72,
+        "restingBpm": 55,
+        "elevatedThresholdBpm": 80,
+        "elevatedPct": 62,
+        "elevatedMinutes": 37,
+        "meanVsAwake": 19,
+        "zone": "high",
+        "headline": "Elevated",
+        "story": "Elevated: heart rate averaged 91 bpm.",
+        "impact": 41.2,
+        "series": [],
+        "partial": {
+          "fromUtc": "2026-11-20T15:42:00.000Z",
+          "toUtc": "2026-11-20T16:30:00.000Z",
+          "lateStart": true,
+          "earlyEnd": false
+        }
+      },
+      "nextSleepScore": 70,
+      "nextReadinessScore": 52,
+      "companies": [
+        {
+          "domain": "northwind.example",
+          "name": "Northwind"
+        }
+      ],
+      "companyAttendees": [
+        {
+          "email": "dana.sample@example.com",
+          "name": "Dana Sample"
+        },
+        {
+          "email": "jordan.fixture@example.com",
+          "name": null
+        }
+      ]
+    },
+    {
+      "id": "p-2",
+      "title": "1:1 with Dana",
+      "kind": "internal",
+      "day": "2026-11-17",
+      "startUtc": "2026-11-17T20:00:00.000Z",
+      "startLocal": "2026-11-17T15:00:00-05:00",
+      "afterHours": false,
+      "earlyStart": false,
+      "hrStress": {
+        "coverage": "ok",
+        "source": "WHOOP",
+        "gaps": [],
+        "method": "heartrate_proxy",
+        "methodNote": "WHOOP heart rate inside the meeting window.",
+        "sampleCount": 60,
+        "meanBpm": 79,
+        "maxBpm": 92,
+        "dayAwakeMeanBpm": 72,
+        "restingBpm": 55,
+        "elevatedThresholdBpm": 80,
+        "elevatedPct": 30,
+        "elevatedMinutes": 14,
+        "meanVsAwake": 7,
+        "zone": "moderate",
+        "headline": "Worth watching",
+        "story": "Worth watching: heart rate averaged 79 bpm.",
+        "impact": 12.5,
+        "series": [],
+        "partial": null
+      },
+      "nextSleepScore": 74,
+      "nextReadinessScore": 60,
+      "companies": [
+        {
+          "domain": "northwind.example",
+          "name": "Northwind"
+        },
+        {
+          "domain": "globex.example",
+          "name": "Globex"
+        }
+      ],
+      "companyAttendees": [
+        {
+          "email": "dana.sample@example.com",
+          "name": "Dana Sample"
+        }
+      ]
+    },
+    {
+      "id": "p-3",
+      "title": "Pipeline review",
+      "kind": "client",
+      "day": "2026-11-12",
+      "startUtc": "2026-11-12T15:30:00.000Z",
+      "startLocal": "2026-11-12T10:30:00-05:00",
+      "afterHours": false,
+      "earlyStart": false,
+      "hrStress": {
+        "coverage": "ok",
+        "source": "WHOOP",
+        "gaps": [],
+        "method": "heartrate_proxy",
+        "methodNote": "WHOOP heart rate inside the meeting window.",
+        "sampleCount": 48,
+        "meanBpm": 91,
+        "maxBpm": 112,
+        "dayAwakeMeanBpm": 72,
+        "restingBpm": 55,
+        "elevatedThresholdBpm": 80,
+        "elevatedPct": 62,
+        "elevatedMinutes": 37,
+        "meanVsAwake": 19,
+        "zone": "high",
+        "headline": "Elevated",
+        "story": "Elevated: heart rate averaged 91 bpm.",
+        "impact": 41.2,
+        "series": [],
+        "partial": {
+          "fromUtc": "2026-11-12T15:42:00.000Z",
+          "toUtc": "2026-11-12T16:30:00.000Z",
+          "lateStart": true,
+          "earlyEnd": false
+        }
+      },
+      "nextSleepScore": 62,
+      "nextReadinessScore": 31,
+      "companies": [
+        {
+          "domain": "northwind.example",
+          "name": "Northwind"
+        }
+      ],
+      "companyAttendees": [
+        {
+          "email": "riley.demo@example.com",
+          "name": "Riley Demo"
+        },
+        {
+          "email": "dana.sample@example.com",
+          "name": "Dana Sample"
+        }
+      ]
+    },
+    {
+      "id": "p-4",
+      "title": "1:1 with Dana",
+      "kind": "internal",
+      "day": "2026-11-05",
+      "startUtc": "2026-11-05T20:00:00.000Z",
+      "startLocal": "2026-11-05T15:00:00-05:00",
+      "afterHours": false,
+      "earlyStart": false,
+      "hrStress": {
+        "coverage": "ok",
+        "source": "WHOOP",
+        "gaps": [],
+        "method": "heartrate_proxy",
+        "methodNote": "WHOOP heart rate inside the meeting window.",
+        "sampleCount": 60,
+        "meanBpm": 79,
+        "maxBpm": 92,
+        "dayAwakeMeanBpm": 72,
+        "restingBpm": 55,
+        "elevatedThresholdBpm": 80,
+        "elevatedPct": 30,
+        "elevatedMinutes": 14,
+        "meanVsAwake": 7,
+        "zone": "moderate",
+        "headline": "Worth watching",
+        "story": "Worth watching: heart rate averaged 79 bpm.",
+        "impact": 12.5,
+        "series": [],
+        "partial": null
+      },
+      "nextSleepScore": 66,
+      "nextReadinessScore": 55,
+      "companies": [
+        {
+          "domain": "northwind.example",
+          "name": "Northwind"
+        }
+      ],
+      "companyAttendees": [
+        {
+          "email": "jordan.fixture@example.com",
+          "name": null
+        }
+      ]
+    }
+  ]
+}

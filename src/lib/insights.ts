@@ -7,7 +7,6 @@ import { otherAttendees, parseAttendeesJson, attendeesIdentityNote, type Attende
 import { normalizeSourceType, type EventSourceType } from "./source-type.ts";
 
 export const INSIGHTS_MIN_DAYS = 7;
-export const INSIGHTS_MAX_DAYS = 60;
 export const INSIGHTS_DEFAULT_DAYS = 28;
 export const INSIGHTS_HIT_LIMIT = 8;
 
@@ -80,6 +79,7 @@ export type InsightLabels = {
   readiness: string;
   /** False when the wearable has no heart-rate fine enough to slice per meeting. */
   intradayHr: boolean;
+  hrProvider?: string | null;
 };
 
 export const DEFAULT_INSIGHT_LABELS: InsightLabels = { provider: "Oura", readiness: "readiness", intradayHr: true };
@@ -100,7 +100,7 @@ export function median(values: number[]): number | null {
 export function parseInsightsDays(raw: string | undefined): number {
   const n = Number(raw ?? INSIGHTS_DEFAULT_DAYS);
   if (!Number.isFinite(n)) return INSIGHTS_DEFAULT_DAYS;
-  return Math.min(INSIGHTS_MAX_DAYS, Math.max(INSIGHTS_MIN_DAYS, Math.round(n)));
+  return Math.max(INSIGHTS_MIN_DAYS, Math.round(n));
 }
 
 export function buildBaseline(
@@ -125,11 +125,13 @@ export function buildBaseline(
     readinessScore: ready,
     stressHighS: stress,
     stressHighHours: hoursFromS(stress),
-    note: !labels.intradayHr
+    note: !labels.provider ? "Wearable display is off." : !labels.intradayHr
       ? `${usual} A work day is compared to the next morning. ${labels.provider} does not share heart rate during the day, so days are ranked by the sleep and ${labels.readiness} that followed.`
-      : span
-        ? `${usual} A work day is compared to the next morning. In-meeting stress uses ring heart-rate during the call — not a daytime stress score.`
-        : `${usual} A work day is compared to the next morning. In-meeting stress uses ring heart-rate during the call — not Oura's daytime stress score.`,
+      : labels.hrProvider && labels.hrProvider !== "Oura"
+        ? `${usual} A work day is compared to the next morning. Meeting heart rate comes from ${labels.hrProvider}.`
+        : span
+          ? `${usual} A work day is compared to the next morning. In-meeting stress uses ring heart-rate during the call — not a daytime stress score.`
+          : `${usual} A work day is compared to the next morning. In-meeting stress uses ring heart-rate during the call — not Oura's daytime stress score.`,
   };
 }
 

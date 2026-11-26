@@ -1,0 +1,249 @@
+{
+  "ok": true,
+  "today": "2026-11-24",
+  "start": "2026-11-21",
+  "end": "2026-11-21",
+  "spanDays": 1,
+  "timeZone": "America/New_York",
+  "wearable": {
+    "source": "whoop",
+    "label": "WHOOP",
+    "hasIntradayHr": true,
+    "hrSource": "whoop_web",
+    "ouraHr": false,
+    "whoopWebHr": true,
+    "readinessLabel": "Recovery",
+    "strainLabel": "Strain",
+    "strainMax": 21,
+    "tagline": "Calendar × WHOOP heart rate and recovery",
+    "note": "Heart rate during the meeting is your WHOOP strap's, minute by minute."
+  },
+  "status": {
+    "displayTitle": "Meetspike",
+    "sandbox": false,
+    "wearables": [
+      {
+        "source": "whoop",
+        "label": "WHOOP",
+        "displayEnabled": true,
+        "connected": true,
+        "expiresAt": "2026-12-20T00:00:00.000Z",
+        "lastDataDay": "2026-11-24",
+        "lastReceivedAt": "2026-11-24T13:55:00.000Z",
+        "history": {
+          "min": "2026-08-01",
+          "max": "2026-11-24"
+        }
+      },
+      {
+        "source": "oura",
+        "label": "Oura",
+        "displayEnabled": true,
+        "connected": false,
+        "expiresAt": null,
+        "lastDataDay": null,
+        "lastReceivedAt": null,
+        "history": {
+          "min": null,
+          "max": null
+        }
+      }
+    ],
+    "sourceDisplay": {
+      "oura": true,
+      "whoop": true
+    },
+    "wearableConnected": true,
+    "googleConnected": true,
+    "lastSync": {
+      "created_at": "2026-11-24T14:05:00.000Z",
+      "status": "ok"
+    }
+  },
+  "morningScores": [
+    {
+      "source": "whoop",
+      "label": "WHOOP",
+      "readinessLabel": "Recovery",
+      "morning": 81,
+      "nextMorning": 74,
+      "average": 76,
+      "usual": {
+        "from": "2026-10-28",
+        "to": "2026-11-24",
+        "days": 28,
+        "recovery": 68,
+        "sleep": 80,
+        "hrv": 62,
+        "restingHr": 54,
+        "strain": 11.2,
+        "meetingHours": 3.5,
+        "afterHours": 0.6
+      }
+    },
+    {
+      "source": "oura",
+      "label": "Oura",
+      "readinessLabel": "Readiness",
+      "morning": 81,
+      "nextMorning": null,
+      "average": 79,
+      "usual": {
+        "from": "2026-10-28",
+        "to": "2026-11-24",
+        "days": 28,
+        "recovery": 77,
+        "sleep": 80,
+        "hrv": 62,
+        "restingHr": 54,
+        "strain": 11.2,
+        "meetingHours": 3.5,
+        "afterHours": 0.6
+      }
+    }
+  ],
+  "day": {
+    "ok": true,
+    "date": "2026-11-21",
+    "timeZone": "America/New_York",
+    "join": {
+      "workDay": "2026-11-21",
+      "priorNightOuraDay": "2026-11-21",
+      "nextMorningOuraDay": "2026-11-22",
+      "note": "work day D to morning D+1"
+    },
+    "calendar": {
+      "day": "2026-11-21",
+      "eventCount": 0,
+      "totalDurationS": 0,
+      "afterHoursCount": 0,
+      "earlyStartCount": 0,
+      "clientCount": 0,
+      "byKind": {},
+      "events": []
+    },
+    "priorNight": {
+      "day": "2026-11-21",
+      "sleepScore": 88,
+      "readinessScore": 81,
+      "avgHrv": 70,
+      "lowestHr": 52,
+      "totalSleepS": 29000,
+      "stressHighS": null,
+      "recoveryHighS": null,
+      "stressSummary": null,
+      "strain": 6.1
+    },
+    "nextMorning": {
+      "day": "2026-11-22",
+      "sleepScore": 82,
+      "readinessScore": 74,
+      "avgHrv": 66,
+      "lowestHr": 53,
+      "totalSleepS": 27500,
+      "stressHighS": null,
+      "recoveryHighS": null,
+      "stressSummary": null,
+      "strain": null
+    },
+    "flags": [],
+    "summary": "No meetings.",
+    "hr": null,
+    "wearable": {
+      "source": "whoop",
+      "label": "WHOOP",
+      "hasIntradayHr": true,
+      "hrSource": "whoop_web",
+      "ouraHr": false,
+      "whoopWebHr": true,
+      "readinessLabel": "Recovery",
+      "strainLabel": "Strain",
+      "strainMax": 21,
+      "tagline": "Calendar × WHOOP heart rate and recovery",
+      "note": "Heart rate during the meeting is your WHOOP strap's, minute by minute."
+    },
+    "methodNote": "Heart rate during the meeting is your WHOOP strap's, minute by minute."
+  },
+  "range": null,
+  "usual": {
+    "from": "2026-10-28",
+    "to": "2026-11-24",
+    "days": 28,
+    "recovery": 68,
+    "sleep": 80,
+    "hrv": 62,
+    "restingHr": 54,
+    "strain": 11.2,
+    "meetingHours": 3.5,
+    "afterHours": 0.6
+  },
+  "effect": {
+    "heavyHours": 4,
+    "heavyMeetings": 5,
+    "heavy": {
+      "days": 5,
+      "nextRecovery": 55
+    },
+    "lighter": {
+      "days": 18,
+      "nextRecovery": 70
+    },
+    "cost": 15,
+    "from": "2026-10-28",
+    "to": "2026-11-24"
+  },
+  "costly": [
+    {
+      "day": "2026-11-12",
+      "meetingCount": 6,
+      "meetingHours": 5.5,
+      "afterHours": 2,
+      "nextRecovery": 31,
+      "nextSleep": 62
+    },
+    {
+      "day": "2026-11-05",
+      "meetingCount": 5,
+      "meetingHours": 4.5,
+      "afterHours": 1,
+      "nextRecovery": 38,
+      "nextSleep": 70
+    },
+    {
+      "day": "2026-11-17",
+      "meetingCount": 4,
+      "meetingHours": 4,
+      "afterHours": 0,
+      "nextRecovery": 44,
+      "nextSleep": 74
+    }
+  ],
+  "people": [
+    {
+      "email": "dana.sample@example.com",
+      "name": "Dana Sample",
+      "heavyDays": 4,
+      "meetings": 7
+    },
+    {
+      "email": "jordan.fixture@example.com",
+      "name": null,
+      "heavyDays": 2,
+      "meetings": 3
+    }
+  ],
+  "series": [
+    {
+      "day": "2026-11-21",
+      "meetingCount": 0,
+      "meetingHours": 0,
+      "afterHours": 0,
+      "recovery": 81,
+      "sleep": 88,
+      "strain": 6.1,
+      "nextRecovery": 74
+    }
+  ],
+  "hits": [],
+  "baselineNote": "Compared with your other meetings over the past 14 days."
+}

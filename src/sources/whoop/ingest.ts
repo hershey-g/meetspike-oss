@@ -1,12 +1,11 @@
 import type { Env } from "../../env.ts";
 import { SOURCE_WHOOP } from "../../types.ts";
-import { canonicalJson, r2Key, sha256Hex } from "../../lib/hash.ts";
 import { addCalendarDays, nowIso } from "../../lib/time.ts";
-import { applyProjected, findRaw, insertRaw, loadTimeZone } from "../../lib/db.ts";
-import { putRawJson } from "../../lib/r2.ts";
+import { applyProjected, loadTimeZone } from "../../lib/db.ts";
+import { archiveWearableDocument } from "../../lib/wearable-archive.ts";
 import { writeSyncLog } from "../../lib/synclog.ts";
 import { WHOOP_COLLECTION_ORDER, type WhoopCollectionKey } from "./endpoints.ts";
-import { assertWhoopDailyBudget, chargeWhoopRequests, listWhoopCollection } from "./client.ts";
+import { assertWhoopDailyBudget, chargeWhoopRequests, listWhoopCollection, type WhoopCallOptions } from "./client.ts";
 import { makeWhoopFixtures, type WhoopBundle } from "./fixtures.ts";
 import {
   buildWhoopContext,
@@ -54,25 +53,14 @@ async function ingestOne(
   ctx: WhoopContext,
   fetchedAt: string,
 ): Promise<"written" | "skipped"> {
-  const body = canonicalJson(doc);
-  const hash = await sha256Hex(body);
-  const documentId = whoopDocumentId(collection, doc) ?? `${collection}:${hash.slice(0, 12)}`;
-  const existing = await findRaw(env.DB, collection, documentId, hash, SOURCE_WHOOP);
-  if (existing) return "skipped";
-
-  const key = r2Key(SOURCE_WHOOP, collection, documentId, hash);
-  await putRawJson(env, key, body);
+  const documentId = whoopDocumentId(collection, doc);
   const day = collection === "sleep" ? whoopSleepDay(doc, ctx.timeZone) : null;
-  const rawId = await insertRaw(
-    env.DB,
-    { endpoint: collection, documentId, day, r2Key: key, hash, fetchedAt },
-    SOURCE_WHOOP,
-  );
-  for (const item of projectWhoopDocument(collection, doc, rawId, fetchedAt, ctx)) {
-    if (item.kind === "sleep_vitals") await applySleepVitals(env.DB, item);
-    else if (item.kind !== "skipped" && item.kind !== "archive_only") await applyProjected(env.DB, item);
-  }
-  return "written";
+  return archiveWearableDocument(env, { source: SOURCE_WHOOP, endpoint: collection, documentId, day, fetchedAt }, doc, async (rawId, revisionAt) => {
+    for (const item of projectWhoopDocument(collection, doc, rawId, revisionAt, ctx)) {
+      if (item.kind === "sleep_vitals") await applySleepVitals(env.DB, item);
+      else if (item.kind !== "skipped" && item.kind !== "archive_only") await applyProjected(env.DB, item);
+    }
+  });
 }
 
 /** Archive and project a batch of WHOOP records. Unchanged records are skipped. */
@@ -108,6 +96,7 @@ export async function ingestWhoopWindow(
   env: Env,
   window: { start: string; end: string },
   trigger: string,
+  requestOptions: WhoopCallOptions = {},
 ): Promise<IngestTally> {
   await assertWhoopDailyBudget(env);
   const calls = { requests: 0 };
@@ -115,11 +104,12 @@ export async function ingestWhoopWindow(
   const bundle: WhoopBundle = { sleep: [], recovery: [], cycle: [], workout: [] };
   try {
     for (const collection of WHOOP_COLLECTION_ORDER) {
-      bundle[collection] = await listWhoopCollection(env, collection, range, { tally: calls });
+      bundle[collection] = await listWhoopCollection(env, collection, range, { ...requestOptions, tally: calls });
     }
   } finally {
     await chargeWhoopRequests(env, calls.requests);
   }
+  requestOptions.signal?.throwIfAborted();
   const tally = await ingestWhoopBundle(env, bundle);
   await writeSyncLog(env, {
     trigger,

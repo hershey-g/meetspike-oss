@@ -6,8 +6,9 @@
     "dev": "wrangler dev",
     "setup": "node scripts/setup.mjs",
     "db:migrations:apply": "wrangler d1 migrations apply DB --remote",
-    "deploy": "npm run db:migrations:apply && wrangler deploy",
-    "deploy:production": "wrangler deploy -c wrangler.production.jsonc",
+    "deploy": "npm run db:migrations:apply && node scripts/stamp-version.mjs -- wrangler deploy",
+    "deploy:production": "node scripts/stamp-version.mjs -- wrangler deploy -c wrangler.production.jsonc --triggers \"*/15 * * * *\" \"* * * * *\"",
+    "stamp": "node scripts/stamp-version.mjs",
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --test test/**/*.test.ts",
     "types": "wrangler types",
@@ -27,19 +28,19 @@
     "label": "Meetspike",
     "bindings": {
       "WEARABLE": {
-        "description": "Which wearable you use: `whoop` or `oura`."
+        "description": "Primary wearable for score comparisons: `whoop` or `oura`."
       },
       "WHOOP_CLIENT_ID": {
-        "description": "From your WHOOP developer app ([create one](https://developer-dashboard.whoop.com/apps/create)). Leave empty if you use Oura. You can also add it later — the `/setup` page shows how."
+        "description": "From your WHOOP developer app ([create one](https://developer-dashboard.whoop.com/apps/create)). Set when connecting WHOOP. You can also add it later — the `/setup` page shows how."
       },
       "WHOOP_CLIENT_SECRET": {
-        "description": "From the same WHOOP developer app. Leave empty if you use Oura."
+        "description": "From the same WHOOP developer app. Set when connecting WHOOP."
       },
       "OURA_CLIENT_ID": {
-        "description": "From your Oura application ([create one](https://cloud.ouraring.com/oauth/applications)). Leave empty if you use WHOOP."
+        "description": "From your Oura application ([create one](https://cloud.ouraring.com/oauth/applications)). Set when connecting Oura."
       },
       "OURA_CLIENT_SECRET": {
-        "description": "From the same Oura application. Leave empty if you use WHOOP."
+        "description": "From the same Oura application. Set when connecting Oura."
       },
       "GOOGLE_CLIENT_ID": {
         "description": "From a Google Cloud OAuth client of type Web application. You can add it later — the `/setup` page shows how."

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDisplayName</key>
+    <string>Meetspike</string>
+    <key>NSCalendarsFullAccessUsageDescription</key>
+    <string>Meetspike reads meeting times and titles to listen to your WHOOP only around meetings.</string>
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>Meetspike connects to the heart-rate broadcast you enable on your WHOOP.</string>
+    <key>UIUserInterfaceStyle</key>
+    <string>Dark</string>
+    <key>NSCameraUsageDescription</key>
+    <string>Meetspike uses the camera to scan the setup code on your Meetspike setup page.</string>
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>com.hersheyg.meetspike.hr.pair</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>meetspike</string>
+            </array>
+        </dict>
+    </array>
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+    </array>
+    <key>NSSupportsLiveActivities</key>
+    <true/>
+    <key>ITSAppUsesNonExemptEncryption</key>
+    <false/>
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>bluetooth-central</string>
+    </array>
+</dict>
+</plist>

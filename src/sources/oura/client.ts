@@ -1,8 +1,7 @@
 import type { Env } from "../../env.ts";
 import { sandboxMode } from "../../env.ts";
-import { OURA_API, endpointByKey, endpointByDataType } from "./endpoints.ts";
+import { OURA_API, addUtcDays, endpointByKey, endpointByDataType } from "./endpoints.ts";
 import { getValidAccessToken, MembershipLapsedError, refreshOuraToken, getOuraTokens } from "../../lib/tokens.ts";
-import { calendarDayInZone, toUtcIso } from "../../lib/time.ts";
 
 export class RateLimitError extends Error {
   retryAfterS: number;
@@ -19,24 +18,35 @@ function collectionBase(env: Env): string {
     : `${OURA_API}/v2/usercollection`;
 }
 
-export async function ouraFetch(env: Env, pathWithQuery: string, token: string): Promise<Response> {
+export type OuraPacing = { minMs: number; lastRequestAt?: number };
+
+export function ouraRetryAfter(headers: Headers, now = Date.now()): number {
+  const delay = Number(headers.get("Retry-After"));
+  if (Number.isFinite(delay) && delay > 0) return Math.ceil(delay);
+  const reset = Number(headers.get("X-RateLimit-Reset")) - now / 1000;
+  return Number.isFinite(reset) && reset > 0 ? Math.ceil(reset) : 60;
+}
+
+export async function ouraFetch(env: Env, pathWithQuery: string, token: string, pacing?: OuraPacing): Promise<Response> {
   const url = pathWithQuery.startsWith("http") ? pathWithQuery : `${collectionBase(env)}/${pathWithQuery}`;
-  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-  if (res.status === 429) {
-    const retry = Number(res.headers.get("Retry-After") ?? "2");
-    throw new RateLimitError(Number.isFinite(retry) ? retry : 2);
-  }
-  if (res.status === 403) throw new MembershipLapsedError();
+  const request = async (accessToken: string) => {
+    if (pacing) {
+      const wait = (pacing.lastRequestAt ?? 0) + pacing.minMs - Date.now();
+      if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
+      pacing.lastRequestAt = Date.now();
+    }
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    if (res.status === 429) throw new RateLimitError(ouraRetryAfter(res.headers));
+    if (res.status === 403) throw new MembershipLapsedError();
+    return res;
+  };
+  let res = await request(token);
   if (res.status === 401) {
     const bundle = await getOuraTokens(env);
     if (!bundle) throw new Error("oura 401 and no tokens");
-    const next = await refreshOuraToken(env, bundle);
-    const retryRes = await fetch(url, { headers: { Authorization: `Bearer ${next}` } });
-    if (retryRes.status === 403) throw new MembershipLapsedError();
-    if (!retryRes.ok) throw new Error(`oura ${retryRes.status} after refresh: ${await retryRes.text()}`);
-    return retryRes;
+    res = await request(await refreshOuraToken(env, bundle));
   }
-  if (!res.ok) throw new Error(`oura ${res.status}: ${await res.text()}`);
+  if (!res.ok) throw new Error(`oura HTTP ${res.status}`);
   return res;
 }
 
@@ -54,50 +64,55 @@ export async function listDocuments(
   env: Env,
   endpointKey: string,
   window: { start: string; end: string },
+  pacing?: OuraPacing,
 ): Promise<ListedDoc[]> {
   const spec = endpointByKey(endpointKey);
   if (!spec) throw new Error(`unknown endpoint ${endpointKey}`);
-  const token = await getValidAccessToken(env);
   const out: ListedDoc[] = [];
+  const hrByDay = new Map<string, ListedDoc[]>();
+  const endExclusive = addUtcDays(window.end, 1);
+  const seen = new Set<string>();
   let next: string | null = null;
   do {
     const params = new URLSearchParams();
     if (spec.dateStyle === "date") {
       params.set("start_date", window.start);
-      params.set("end_date", window.end);
+      params.set("end_date", endExclusive);
     } else if (spec.dateStyle === "datetime") {
-      params.set("start_datetime", `${window.start}T00:00:00-04:00`);
-      params.set("end_datetime", `${window.end}T23:59:59-04:00`);
+      params.set("start_datetime", `${window.start}T00:00:00Z`);
+      params.set("end_datetime", `${endExclusive}T00:00:00Z`);
     }
     if (next) params.set("next_token", next);
     const path = spec.dateStyle === "none" ? spec.path : `${spec.path}?${params.toString()}`;
-    const res = await ouraFetch(env, path, token);
+    const res = await ouraFetch(env, path, await getValidAccessToken(env), pacing);
     const json = (await res.json()) as { data?: ListedDoc[]; next_token?: string | null };
     if (spec.key === "personal_info") {
       out.push(json as unknown as ListedDoc);
       break;
     }
+    if (!Array.isArray(json.data)) throw new Error(`Oura ${spec.key} returned an invalid collection`);
     if (spec.key === "heartrate") {
-      const page = Array.isArray(json.data) ? json.data : [];
-      if (page.length) {
-        const first = page[0] as ListedDoc;
-        const ts = typeof first.timestamp === "string" ? first.timestamp : `${window.start}T00:00:00-04:00`;
-        let day = window.start;
-        try {
-          day = calendarDayInZone(toUtcIso(ts));
-        } catch {
-          /* keep window.start */
-        }
-        out.push({
-          id: `hr-${day}-p${out.length}`,
-          day,
-          data: page,
-        });
+      for (const sample of json.data) {
+        const timestamp = typeof sample?.timestamp === "string" ? Date.parse(sample.timestamp) : NaN;
+        if (!Number.isFinite(timestamp)) continue;
+        const day = new Date(timestamp).toISOString().slice(0, 10);
+        if (day < window.start || day > window.end) continue;
+        const points = hrByDay.get(day);
+        if (points) points.push(sample);
+        else hrByDay.set(day, [sample]);
       }
-    } else if (Array.isArray(json.data)) {
-      out.push(...json.data);
+    } else {
+      out.push(...json.data.filter((doc) => typeof doc?.day !== "string" || (doc.day >= window.start && doc.day <= window.end)));
     }
     next = json.next_token ?? null;
+    if (next) {
+      if (seen.has(next)) throw new Error(`Oura ${spec.key} repeated a pagination token`);
+      seen.add(next);
+    }
   } while (next);
+  for (const [day, data] of hrByDay) {
+    data.sort((a, b) => String(a.timestamp).localeCompare(String(b.timestamp)));
+    out.push({ id: `hr-${day}-daily`, day, data });
+  }
   return out;
 }

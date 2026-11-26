@@ -8,7 +8,7 @@
  *
  *   npm run setup                       # WHOOP, the default for a new install
  *   npm run setup -- --wearable oura
- *   npm run setup -- --name stressboard # use your own name instead of the template's
+ *   npm run setup -- --name meetspike   # use your own name instead of the template's
  *   npm run setup -- --dry-run          # show what would happen, change nothing
  */
 import { spawnSync } from "node:child_process";

@@ -3,9 +3,8 @@ import type { Env } from "../env.ts";
 import { ACTIVE_ENDPOINTS, addUtcDays, formatUtcDay } from "../sources/oura/endpoints.ts";
 import { ingestEndpointWindow } from "../sources/oura/ingest.ts";
 import { writeSyncLog } from "../lib/synclog.ts";
-import { getGoogleTokens, getWhoopTokens } from "../lib/tokens.ts";
-import { syncPrimaryCalendar } from "../sources/calendar/ingest.ts";
-import { activeWearable } from "../lib/wearable.ts";
+import { getGoogleTokens, getOuraTokens, getWhoopTokens } from "../lib/tokens.ts";
+import { FULL_SYNC_FUTURE_DAYS, FULL_SYNC_PAST_DAYS, syncCalendarIncremental } from "../sources/calendar/ingest.ts";
 import { SOURCE_WHOOP } from "../types.ts";
 import { ingestWhoopWindow } from "../sources/whoop/ingest.ts";
 
@@ -20,11 +19,12 @@ export class NightlyReconcileWorkflow extends WorkflowEntrypoint<Env, ReconcileP
     const startDay = addUtcDays(endDay, -6);
     const totals = { written: 0, skipped: 0 };
 
-    const whoop = activeWearable(this.env) === SOURCE_WHOOP;
-    // Not connected yet (a fresh install) is not an error worth retrying all night.
-    const whoopConnected = whoop
-      ? await step.do("whoop:has-tokens", STEP, async () => Boolean(await getWhoopTokens(this.env)))
-      : false;
+    // A source can be unconnected or fail separately from the other sources.
+    const [whoopConnected, ouraConnected] = await Promise.all([
+      step.do("whoop:has-tokens", STEP, async () => Boolean(await getWhoopTokens(this.env))),
+      step.do("oura:has-tokens", STEP, async () => Boolean(await getOuraTokens(this.env))),
+    ]);
+    const failed: string[] = [];
     if (whoopConnected) {
       // WHOOP rescores sleep and recovery after the fact, so re-pull the week.
       try {
@@ -43,11 +43,11 @@ export class NightlyReconcileWorkflow extends WorkflowEntrypoint<Env, ReconcileP
           status: "error",
           errorText: err instanceof Error ? err.message : String(err),
         });
-        throw err;
+        failed.push(SOURCE_WHOOP);
       }
     }
 
-    for (const spec of whoop ? [] : ACTIVE_ENDPOINTS) {
+    for (const spec of ouraConnected ? ACTIVE_ENDPOINTS : []) {
       const name = `reconcile:${spec.key}:${startDay}:${endDay}`;
       try {
         const tally = await step.do(name, STEP, async () =>
@@ -64,7 +64,7 @@ export class NightlyReconcileWorkflow extends WorkflowEntrypoint<Env, ReconcileP
           status: "error",
           errorText: err instanceof Error ? err.message : String(err),
         });
-        throw err;
+        failed.push(`oura:${spec.key}`);
       }
     }
 
@@ -72,12 +72,16 @@ export class NightlyReconcileWorkflow extends WorkflowEntrypoint<Env, ReconcileP
       Boolean(await getGoogleTokens(this.env)),
     );
     if (googlePresent) {
-      const calStart = addUtcDays(endDay, -6);
-      const calEnd = addUtcDays(endDay, 14);
+      const calStart = addUtcDays(endDay, -FULL_SYNC_PAST_DAYS);
+      const calEnd = addUtcDays(endDay, FULL_SYNC_FUTURE_DAYS);
       try {
-        const cal = await step.do("calendar:primary", STEP, async () =>
-          syncPrimaryCalendar(this.env, { start: calStart, end: calEnd }, trigger),
-        );
+        // Once a day, a full listing of the window: it renews the sync token and
+        // catches anything an incremental pass could miss. The 15-minute cron
+        // (src/index.ts) does the cheap incremental passes in between.
+        const cal = await step.do("calendar:primary", STEP, async () => {
+          const r = await syncCalendarIncremental(this.env, trigger, { force: true });
+          return { written: r.written + r.removed, skipped: r.skipped };
+        });
         totals.written += cal.written;
         totals.skipped += cal.skipped;
       } catch (err) {
@@ -95,6 +99,6 @@ export class NightlyReconcileWorkflow extends WorkflowEntrypoint<Env, ReconcileP
     }
 
     // P1.5: renew webhook subscriptions here once they are registered.
-    return { startDay, endDay, ...totals };
+    return { startDay, endDay, ...totals, failed };
   }
 }

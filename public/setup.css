@@ -16,6 +16,7 @@
 .setup .foot { padding-bottom: calc(2rem + env(safe-area-inset-bottom)); text-align: left; }
 .setup .btn {
   display: inline-block;
+  min-height: 44px;
   padding: 0.5rem 0.9rem;
   border: 1px solid var(--line-2);
   border-radius: 999px;
@@ -26,7 +27,7 @@
 }
 .setup .btn.light { background: var(--ink); color: var(--bg); border-color: transparent; }
 .setup .btn:disabled { opacity: 0.5; cursor: default; }
-.setup .text-btn { padding: 0; border: 0; background: none; color: var(--link); text-decoration: underline; cursor: pointer; }
+.setup .text-btn { min-height: 44px; padding: 0; border: 0; background: none; color: var(--link); text-decoration: underline; cursor: pointer; }
 
 .setup main { max-width: 44rem; margin: 0 auto; padding: 0 1rem 3rem; }
 .setup .step {
@@ -72,3 +73,26 @@
 .setup .todo { color: var(--mid); }
 .setup a.btn { display: inline-block; text-decoration: none; }
 .setup a.btn[aria-disabled="true"] { opacity: 0.45; pointer-events: none; }
+
+/* Step 8: the iPhone setup code. The QR keeps a white square and quiet zone in
+   dark mode, which phone cameras need to read it. */
+.setup .pair { display: flex; flex-wrap: wrap; gap: 1rem 1.25rem; align-items: center; margin-top: 0.5rem; }
+.setup .pair[hidden] { display: none; }
+.setup .qr { width: min(15rem, 100%); aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: #fff; }
+.setup .qr svg { display: block; width: 100%; height: 100%; }
+.setup .qr.expired { opacity: 0.15; }
+.setup .pair-info { flex: 1 1 14rem; }
+.setup .pair-info p { margin: 0.35rem 0; }
+
+/* Google accounts and their calendars (step 5). */
+.setup .calendars { margin-top: 1rem; border-top: 1px solid var(--line); padding-top: 0.8rem; }
+.setup .calendars h3 { margin: 0 0 0.3rem; font-size: 1rem; }
+.setup .cal-account { margin: 0.8rem 0; padding: 0.6rem 0.8rem; border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
+.setup .cal-account legend { padding: 0 0.35rem; font-weight: 600; overflow-wrap: anywhere; }
+.setup .cal-list { list-style: none; padding-left: 0; margin: 0.2rem 0; }
+.setup .cal-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
+.setup .cal-list label { display: flex; align-items: center; gap: 0.55rem; min-height: 44px; cursor: pointer; overflow-wrap: anywhere; }
+.setup .cal-list input { width: 1.15rem; height: 1.15rem; flex: none; accent-color: var(--good); }
+.setup .swatch { width: 0.7rem; height: 0.7rem; flex: none; border-radius: 50%; border: 1px solid var(--line-2); }
+.setup .muted { color: var(--muted); font-size: 0.82rem; }
+.setup .cal-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem; margin: 0.4rem 0 0; }
