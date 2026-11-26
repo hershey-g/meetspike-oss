@@ -1,0 +1,6 @@
+event: step
+data: {"id": "calendar", "label": "Reading your calendar", "status": "active"}
+
+event: error
+data: {"error": "Anthropic no longer accepts the saved key. Replace it in More.", "needsKey": true}
+

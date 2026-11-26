@@ -41,18 +41,24 @@ export type WhoopCallOptions = {
   tally?: { requests: number };
   sleep?: (ms: number) => Promise<void>;
   now?: () => number;
+  signal?: AbortSignal;
+  spacing?: { minMs: number; lastRequestAt?: number };
 };
 
 const defaultSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 async function paced(url: string, token: string, opts: WhoopCallOptions): Promise<Response> {
   const now = opts.now ?? Date.now;
-  const wait = rateLimitDelayMs(rate, now());
+  const spacing = opts.spacing;
+  const spacingDelay = spacing && spacing.lastRequestAt !== undefined ? spacing.lastRequestAt + spacing.minMs - now() : 0;
+  const wait = Math.max(rateLimitDelayMs(rate, now()), spacingDelay);
   if (wait > MAX_INLINE_WAIT_MS) throw new WhoopRateLimitError(Math.ceil(wait / 1000), "local budget");
   if (wait > 0) await (opts.sleep ?? defaultSleep)(wait);
+  opts.signal?.throwIfAborted();
+  if (spacing) spacing.lastRequestAt = now();
   rate = recordRequest(rate, now());
   if (opts.tally) opts.tally.requests += 1;
-  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` }, signal: opts.signal });
   rate = applyRateLimitHeaders(rate, now(), parseRateLimitHeaders(res.headers));
   if (res.status === 429) {
     const retry = retryAfterSeconds(res.headers);
@@ -65,6 +71,8 @@ async function paced(url: string, token: string, opts: WhoopCallOptions): Promis
 /** GET a WHOOP API path. Paces requests, and refreshes the token once on a 401. */
 export async function whoopFetch(env: Env, pathWithQuery: string, opts: WhoopCallOptions = {}): Promise<Response> {
   const url = pathWithQuery.startsWith("http") ? pathWithQuery : `${WHOOP_API}${pathWithQuery}`;
+  // No abort signal on token calls: WHOOP retires the old refresh token, so an
+  // aborted refresh after WHOOP answered would lose the new one.
   const token = await getValidWhoopAccessToken(env);
   let res = await paced(url, token, opts);
   if (res.status === 401) {

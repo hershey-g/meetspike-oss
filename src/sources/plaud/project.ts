@@ -8,8 +8,11 @@ import {
 } from "../../lib/time.ts";
 import { durationSeconds, isAfterHours } from "../calendar/classify.ts";
 import { classifyPlaudTitle, cleanPlaudTitle } from "./classify.ts";
+import { parseSpeakers, type PlaudSpeaker } from "../../lib/person-names.ts";
 
 export type PlaudRecordingInput = {
+  /** Optional speaker names from the transcript: ["Jane Doe"] or [{ name, email }]. Names only are kept. */
+  speakers?: unknown;
   plaud_file_id?: unknown;
   title?: unknown;
   start_at?: unknown;
@@ -186,4 +189,16 @@ function extractRecordings(body: unknown): PlaudRecordingInput[] {
   }
   if (rec.plaud_file_id) return [rec as PlaudRecordingInput];
   return [];
+}
+
+/** Speaker names per plaud_file_id, for attendee-name matching. Transcripts are never read or stored. */
+export function extractPlaudSpeakers(body: unknown): Map<string, PlaudSpeaker[]> {
+  const out = new Map<string, PlaudSpeaker[]>();
+  for (const rec of extractRecordings(body)) {
+    const id = asString(rec.plaud_file_id);
+    if (!id) continue;
+    const speakers = parseSpeakers(rec.speakers);
+    if (speakers.length) out.set(id, speakers);
+  }
+  return out;
 }

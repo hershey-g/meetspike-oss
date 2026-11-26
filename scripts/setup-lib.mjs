@@ -75,7 +75,7 @@ export function parseArgs(argv) {
     } else if (arg === "--name" || arg.startsWith("--name=")) {
       const v = String(value() ?? "").trim();
       if (!/^[a-z0-9][a-z0-9-]{0,50}$/.test(v)) {
-        throw new Error("--name must be lower-case letters, numbers and dashes (for example: stressboard)");
+        throw new Error("--name must be lower-case letters, numbers and dashes (for example: meetspike)");
       }
       opts.name = v;
     } else throw new Error(`unknown option: ${arg}`);
@@ -83,7 +83,7 @@ export function parseArgs(argv) {
   return opts;
 }
 
-/** Give every resource a new prefix: `--name stressboard` turns meetspike-db into stressboard-db. */
+/** Give every resource a new prefix: `--name meetspike` turns hg-biometrics-db into meetspike-db. */
 export function renameWorker(templateText, newName) {
   const current = parseJsonc(templateText).name;
   if (!newName || newName === current) return templateText;

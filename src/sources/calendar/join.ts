@@ -129,6 +129,7 @@ export function joinMeeting(
   ouraByDay: Map<string, OuraDaySlice>,
   allEvents: CalendarEventRow[],
   readinessContributorsByDay?: Map<string, string | null>,
+  dayLoad = buildDayLoad(allEvents, event.day),
 ): JoinedMeeting {
   const workDay = event.day;
   const morning = joinWorkDayToOuraMorning(workDay);
@@ -148,7 +149,7 @@ export function joinMeeting(
   }
   return {
     event,
-    dayLoad: buildDayLoad(allEvents, workDay),
+    dayLoad,
     signals: {
       workDay,
       ouraMorningDay: morning,
@@ -172,7 +173,14 @@ export function joinMeetings(
   readinessContributorsByDay?: Map<string, string | null>,
 ): JoinedMeeting[] {
   const live = events.filter((e) => !e.deleted_at);
-  return live.map((e) => joinMeeting(e, ouraByDay, live, readinessContributorsByDay));
+  const byDay = new Map<string, CalendarEventRow[]>();
+  for (const event of live) {
+    const day = byDay.get(event.day) ?? [];
+    day.push(event);
+    byDay.set(event.day, day);
+  }
+  const loads = new Map([...byDay].map(([day, meetings]) => [day, buildDayLoad(meetings, day)]));
+  return live.map((event) => joinMeeting(event, ouraByDay, live, readinessContributorsByDay, loads.get(event.day)));
 }
 
 export function priorNightOuraDay(workDay: string): string {

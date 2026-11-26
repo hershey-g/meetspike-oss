@@ -1,7 +1,7 @@
 import type { Env } from "../env.ts";
 import type { TokenBundle } from "../types.ts";
 import { OURA_TOKEN } from "../sources/oura/endpoints.ts";
-import { GOOGLE_TOKEN, GOOGLE_TOKEN_KEY } from "../sources/calendar/endpoints.ts";
+import { GOOGLE_TOKEN, GOOGLE_TOKEN_KEY, googleTokenKey } from "../sources/calendar/endpoints.ts";
 import { WHOOP_TOKEN, WHOOP_TOKEN_KEY } from "../sources/whoop/endpoints.ts";
 import { nowIso } from "./time.ts";
 
@@ -69,27 +69,59 @@ export async function refreshOuraToken(env: Env, bundle: TokenBundle): Promise<s
   return next.access_token;
 }
 
-export async function getGoogleTokens(env: Env): Promise<TokenBundle | null> {
+/** The legacy single-account bundle (KV google:tokens), present until the first run moves it. */
+export async function getLegacyGoogleTokens(env: Env): Promise<TokenBundle | null> {
   const raw = await env.TOKENS.get(GOOGLE_KEY);
   if (!raw) return null;
   return JSON.parse(raw) as TokenBundle;
 }
 
-export async function putGoogleTokens(env: Env, bundle: TokenBundle): Promise<void> {
-  await env.TOKENS.put(GOOGLE_KEY, JSON.stringify(bundle));
-}
-
-export async function getValidGoogleAccessToken(env: Env): Promise<string> {
-  const bundle = await getGoogleTokens(env);
-  if (!bundle) throw new Error("no google tokens — complete OAuth at /auth/google/start");
-  const expires = Date.parse(bundle.expires_at);
-  if (Number.isFinite(expires) && expires - SKEW_MS > Date.now()) {
-    return bundle.access_token;
+/**
+ * Any Google bundle, for "is Google connected?" checks: the legacy key while
+ * it still exists, otherwise the first connected account. Use the per-account
+ * functions below for actual calls.
+ */
+export async function getGoogleTokens(env: Env): Promise<TokenBundle | null> {
+  const legacy = await getLegacyGoogleTokens(env);
+  if (legacy) return legacy;
+  let first: { email: string } | null = null;
+  try {
+    first = await env.DB.prepare(`SELECT email FROM google_account ORDER BY connected_at, email LIMIT 1`)
+      .first<{ email: string }>();
+  } catch {
+    return null;
   }
-  return refreshGoogleToken(env, bundle);
+  return first?.email ? getGoogleAccountTokens(env, first.email) : null;
 }
 
-export async function refreshGoogleToken(env: Env, bundle: TokenBundle): Promise<string> {
+export async function getGoogleAccountTokens(env: Env, email: string): Promise<TokenBundle | null> {
+  const raw = await env.TOKENS.get(googleTokenKey(email));
+  if (!raw) return null;
+  return JSON.parse(raw) as TokenBundle;
+}
+
+export async function putGoogleAccountTokens(env: Env, email: string, bundle: TokenBundle): Promise<void> {
+  await env.TOKENS.put(googleTokenKey(email), JSON.stringify(bundle));
+}
+
+export async function deleteGoogleAccountTokens(env: Env, email: string): Promise<void> {
+  await env.TOKENS.delete(googleTokenKey(email));
+}
+
+export function googleBundleFresh(bundle: TokenBundle): boolean {
+  const expires = Date.parse(bundle.expires_at);
+  return Number.isFinite(expires) && expires - SKEW_MS > Date.now();
+}
+
+export async function getValidGoogleAccessToken(env: Env, email: string): Promise<string> {
+  const bundle = await getGoogleAccountTokens(env, email);
+  if (!bundle) throw new Error(`no google tokens for ${email}; connect it at /auth/google/start`);
+  if (googleBundleFresh(bundle)) return bundle.access_token;
+  return refreshGoogleToken(env, email, bundle);
+}
+
+/** Exchange a refresh token for a new bundle. Stores nothing. */
+export async function refreshGoogleBundle(env: Env, bundle: TokenBundle): Promise<TokenBundle> {
   if (!bundle.refresh_token) throw new Error("google token expired and no refresh_token");
   if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
     throw new Error("GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET missing");
@@ -115,13 +147,18 @@ export async function refreshGoogleToken(env: Env, bundle: TokenBundle): Promise
     expires_in?: number;
     scope?: string;
   };
-  const next: TokenBundle = {
+  return {
     access_token: json.access_token,
     refresh_token: json.refresh_token ?? bundle.refresh_token,
     expires_at: new Date(Date.now() + (json.expires_in ?? 3600) * 1000).toISOString(),
     scope: json.scope ?? bundle.scope,
   };
-  await putGoogleTokens(env, next);
+}
+
+/** Refresh one account's token and store the new bundle under that account. */
+export async function refreshGoogleToken(env: Env, email: string, bundle: TokenBundle): Promise<string> {
+  const next = await refreshGoogleBundle(env, bundle);
+  await putGoogleAccountTokens(env, email, next);
   return next.access_token;
 }
 
@@ -170,6 +207,14 @@ export async function refreshWhoopToken(env: Env, bundle: TokenBundle): Promise<
   });
   if (!res.ok) {
     const text = await res.text();
+    // Two runs (the cron and a pull to refresh) can refresh at once. WHOOP
+    // rotates the refresh token, so the loser gets an error for a token the
+    // winner already swapped. If the stored bundle moved on, use it.
+    const stored = await getWhoopTokens(env);
+    if (stored && stored.refresh_token !== bundle.refresh_token) {
+      const exp = Date.parse(stored.expires_at);
+      if (Number.isFinite(exp) && exp - SKEW_MS > Date.now()) return stored.access_token;
+    }
     throw new Error(`whoop refresh failed ${res.status}: ${text}`);
   }
   const json = (await res.json()) as {

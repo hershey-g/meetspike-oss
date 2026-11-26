@@ -28,25 +28,31 @@ export type LocalWall = {
   offsetMin: number;
 };
 
+const zoneFormatters = new Map<string, Intl.DateTimeFormat>();
+
 function zoneParts(utcIso: string, timeZone: string): Record<string, string> {
   const d = new Date(utcIso);
   if (Number.isNaN(d.getTime())) throw new Error(`unparseable timestamp: ${utcIso}`);
-  const fmt = new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hourCycle: "h23",
-  });
+  let fmt = zoneFormatters.get(timeZone);
+  if (!fmt) {
+    fmt = new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hourCycle: "h23",
+    });
+    zoneFormatters.set(timeZone, fmt);
+  }
   return Object.fromEntries(fmt.formatToParts(d).filter((p) => p.type !== "literal").map((p) => [p.type, p.value]));
 }
 
 export function calendarDayInZone(utcIso: string, timeZone: string = IANA_FALLBACK): string {
   const p = zoneParts(utcIso, timeZone);
-  return `${p.year}-${p.month}-${p.day}`;
+  return `${p.year.padStart(4, "0")}-${p.month}-${p.day}`;
 }
 
 /** Offset of `timeZone` at this instant, minutes east of UTC (EST = -300, EDT = -240). */
@@ -66,7 +72,7 @@ export function offsetMinutesInZone(utcIso: string, timeZone: string = IANA_FALL
 export function localWallInZone(utcIso: string, timeZone: string = IANA_FALLBACK): LocalWall {
   const p = zoneParts(utcIso, timeZone);
   return {
-    day: `${p.year}-${p.month}-${p.day}`,
+    day: `${p.year.padStart(4, "0")}-${p.month}-${p.day}`,
     hour: Number(p.hour),
     minute: Number(p.minute),
     second: Number(p.second),
@@ -93,7 +99,8 @@ export function localIsoFromWall(wall: Pick<LocalWall, "day" | "hour" | "minute"
 export function addCalendarDays(day: string, n: number): string {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day);
   if (!m) throw new Error(`invalid day ${day}`);
-  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]) + n));
+  const d = new Date(`${day}T12:00:00.000Z`);
+  d.setUTCDate(d.getUTCDate() + n);
   return d.toISOString().slice(0, 10);
 }
 

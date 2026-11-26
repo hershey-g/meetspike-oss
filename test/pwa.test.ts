@@ -62,10 +62,44 @@ describe("PWA manifest and icons", () => {
     });
   }
 
-  it("does not register a service worker", () => {
-    for (const f of ["app.js", "setup.js", "index.html", "setup.html"]) {
-      assert.doesNotMatch(read(f), /serviceWorker/);
-    }
+  for (const page of ["index.html", "setup.html"]) {
+    it(`${page} is laid out for the notch / Dynamic Island`, () => {
+      const html = read(page);
+      assert.match(html, /name="viewport" content="[^"]*viewport-fit=cover/);
+      assert.match(html, /name="apple-mobile-web-app-status-bar-style" content="black-translucent"/);
+    });
+  }
+});
+
+describe("service worker", () => {
+  const swSrc = read("sw.js");
+
+  it("only the main app registers it, from the root scope, bypassing the HTTP cache", () => {
+    const pwa = read("pwa.js");
+    assert.match(pwa, /register\("\/sw\.js", \{ scope: "\/", updateViaCache: "none" \}\)/);
+    assert.match(read("app.js"), /from "\.\/pwa\.js"/);
+    for (const f of ["setup.js", "setup.html"]) assert.doesNotMatch(read(f), /serviceWorker/);
+  });
+
+  it("activates new versions at once and drops old caches", () => {
+    assert.match(swSrc, /skipWaiting\(\)/);
+    assert.match(swSrc, /clients\.claim\(\)/);
+    assert.match(swSrc, /const CACHE = `\$\{PREFIX\}\$\{VERSION\}`/);
+    assert.match(swSrc, /caches\.delete\(key\)/);
+  });
+
+  it("never intercepts the API, OAuth, webhooks or setup", () => {
+    const m = /const PASS_THROUGH = (\/.*\/);/.exec(swSrc);
+    assert.ok(m, "PASS_THROUGH regex present");
+    const re = new Function(`return ${m[1]}`)() as RegExp;
+    for (const p of ["/api/view", "/api", "/auth/oura/callback", "/hooks/oura", "/setup", "/setup.js", "/setup.html"]) assert.ok(re.test(p), p);
+    for (const p of ["/", "/app.js", "/app.css", "/apis-are-fun"]) assert.equal(re.test(p), false, p);
+  });
+
+  it("serves pages and app code network-first", () => {
+    assert.match(swSrc, /req\.mode === "navigate"\) \{\s*\/\/[^\n]*\n\s*event\.respondWith\(networkFirst\(/);
+    assert.match(swSrc, /SHELL\.includes\(url\.pathname\)\) \{\s*event\.respondWith\(networkFirst\(/);
+    for (const f of ["/app.js", "/app.css", "/pwa.js", "/install-gate.js", "/range-presets.js"]) assert.ok(swSrc.includes(`"${f}"`), f);
   });
 });
 
@@ -73,7 +107,7 @@ describe("cache headers", () => {
   const rules = headerRules();
 
   it("app code, pages and the manifest revalidate on every load", () => {
-    const paths = ["/", "/index.html", "/setup", "/setup.html", "/setup.js", "/setup.css", "/app.js", "/app.css", "/range-presets.js", "/manifest.webmanifest"];
+    const paths = ["/", "/index.html", "/setup", "/setup.html", "/setup.js", "/setup.css", "/app.js", "/app.css", "/range-presets.js", "/pwa.js", "/install-gate.js", "/ptr.js", "/ptr-logic.js", "/sw.js", "/manifest.webmanifest"];
     for (const p of paths) {
       const cc = rules.get(p)?.["cache-control"];
       assert.equal(cc, "no-cache", `${p} must be no-cache, got ${cc}`);

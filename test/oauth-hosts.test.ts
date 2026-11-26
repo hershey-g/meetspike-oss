@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
 import { auth } from "../src/routes/auth.ts";
 import { api } from "../src/routes/api.ts";
+import { sqliteD1 } from "./sqlite-d1.ts";
 
 // During a hostname move the same Worker answers on two addresses. Every
 // OAuth flow must send, and later repeat, the callback on the host the
@@ -23,6 +24,8 @@ function makeEnv(extra: Record<string, unknown> = {}) {
   const kv = fakeKv();
   const env = {
     TOKENS: kv,
+    DB: sqliteD1().db,
+    RAW: { put: async () => undefined },
     WHOOP_CLIENT_ID: "test-whoop-id",
     WHOOP_CLIENT_SECRET: "test-whoop-secret",
     OURA_CLIENT_ID: "test-oura-id",
@@ -38,7 +41,16 @@ const realFetch = globalThis.fetch;
 let sent: URLSearchParams[] = [];
 function mockTokenEndpoint() {
   sent = [];
-  globalThis.fetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    // Google: the callback names the account from its primary calendar, then
+    // reads the calendar list and syncs. Those are not token exchanges.
+    if (url.includes("/calendar/v3/calendars/primary") && !url.includes("/events")) {
+      return new Response(JSON.stringify({ id: "you@example.com" }), { status: 200 });
+    }
+    if (url.includes("/calendar/v3/")) {
+      return new Response(JSON.stringify({ items: [], nextSyncToken: "t" }), { status: 200 });
+    }
     sent.push(new URLSearchParams(String(init?.body ?? "")));
     return new Response(JSON.stringify({ access_token: "a", refresh_token: "r", expires_in: 3600 }), {
       status: 200,

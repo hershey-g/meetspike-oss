@@ -1,0 +1,440 @@
+{
+  "ok": true,
+  "today": "2026-11-24",
+  "start": "2026-11-24",
+  "end": "2026-11-24",
+  "spanDays": 1,
+  "timeZone": "America/New_York",
+  "wearable": {
+    "source": null,
+    "label": "",
+    "readinessLabel": "Morning score",
+    "strainLabel": null,
+    "strainMax": null,
+    "hasIntradayHr": false,
+    "hrSource": null,
+    "ouraHr": false,
+    "whoopWebHr": false,
+    "tagline": "Calendar",
+    "note": "Wearable display is off."
+  },
+  "status": {
+    "displayTitle": "Meetspike",
+    "sandbox": false,
+    "wearables": [
+      {
+        "source": "whoop",
+        "label": "WHOOP",
+        "displayEnabled": false,
+        "connected": true,
+        "expiresAt": "2026-12-20T00:00:00.000Z",
+        "lastDataDay": "2026-11-24",
+        "lastReceivedAt": "2026-11-24T13:55:00.000Z",
+        "history": {
+          "min": "2026-08-01",
+          "max": "2026-11-24"
+        }
+      },
+      {
+        "source": "oura",
+        "label": "Oura",
+        "displayEnabled": false,
+        "connected": false,
+        "expiresAt": null,
+        "lastDataDay": null,
+        "lastReceivedAt": null,
+        "history": {
+          "min": null,
+          "max": null
+        }
+      }
+    ],
+    "sourceDisplay": {
+      "oura": false,
+      "whoop": false
+    },
+    "wearableConnected": true,
+    "googleConnected": true,
+    "lastSync": {
+      "created_at": "2026-11-24T14:05:00.000Z",
+      "status": "ok"
+    }
+  },
+  "morningScores": [],
+  "day": {
+    "ok": true,
+    "date": "2026-11-24",
+    "timeZone": "America/New_York",
+    "join": {
+      "workDay": "2026-11-24",
+      "priorNightOuraDay": "2026-11-24",
+      "nextMorningOuraDay": "2026-11-25",
+      "note": "work day D to morning D+1"
+    },
+    "calendar": {
+      "day": "2026-11-24",
+      "eventCount": 5,
+      "totalDurationS": 14400,
+      "afterHoursCount": 1,
+      "earlyStartCount": 0,
+      "clientCount": 1,
+      "byKind": {
+        "internal": 4,
+        "client": 1
+      },
+      "events": [
+        {
+          "id": "m-standup",
+          "title": "Team standup",
+          "kind": "internal",
+          "day": "2026-11-24",
+          "startUtc": "2026-11-24T14:00:00.000Z",
+          "endUtc": "2026-11-24T14:30:00.000Z",
+          "startLocal": "2026-11-24T09:00:00-05:00",
+          "endLocal": "2026-11-24T09:30:00-05:00",
+          "afterHours": false,
+          "earlyStart": false,
+          "attendeeCount": 3,
+          "durationS": 1800,
+          "ouraMorningDay": "2026-11-24",
+          "signals": {
+            "stressHighS": null,
+            "recoveryHighS": null,
+            "stressSummary": null,
+            "stressSource": "none",
+            "readinessProxy": null,
+            "nextSleepScore": null,
+            "nextReadinessScore": null,
+            "nextHrv": null,
+            "nextLowestHr": null,
+            "nextTotalSleepS": null
+          },
+          "score": 0.4,
+          "flags": [],
+          "hrStress": null,
+          "attendees": [
+            {
+              "email": "me@example.com",
+              "self": true,
+              "name": "Me Example"
+            },
+            {
+              "email": "casey.example@example.com",
+              "self": false,
+              "name": "Casey Example"
+            },
+            {
+              "email": "sam.placeholder@example.com",
+              "self": false,
+              "name": "Sam Placeholder"
+            }
+          ],
+          "attendeeNote": null,
+          "sourceType": "calendar",
+          "syncReason": null,
+          "hasTranscript": false
+        },
+        {
+          "id": "m-pipeline",
+          "title": "Pipeline review",
+          "kind": "client",
+          "day": "2026-11-24",
+          "startUtc": "2026-11-24T15:30:00.000Z",
+          "endUtc": "2026-11-24T16:30:00.000Z",
+          "startLocal": "2026-11-24T10:30:00-05:00",
+          "endLocal": "2026-11-24T11:30:00-05:00",
+          "afterHours": false,
+          "earlyStart": false,
+          "attendeeCount": 3,
+          "durationS": 3600,
+          "ouraMorningDay": "2026-11-24",
+          "signals": {
+            "stressHighS": null,
+            "recoveryHighS": null,
+            "stressSummary": null,
+            "stressSource": "none",
+            "readinessProxy": null,
+            "nextSleepScore": null,
+            "nextReadinessScore": null,
+            "nextHrv": null,
+            "nextLowestHr": null,
+            "nextTotalSleepS": null
+          },
+          "score": 0.4,
+          "flags": [],
+          "hrStress": null,
+          "attendees": [
+            {
+              "email": "me@example.com",
+              "self": true,
+              "name": "Me Example"
+            },
+            {
+              "email": "dana.sample@example.com",
+              "self": false,
+              "name": "Dana Sample"
+            },
+            {
+              "email": "riley.demo@example.com",
+              "self": false,
+              "name": "Riley Demo"
+            }
+          ],
+          "attendeeNote": null,
+          "sourceType": "calendar",
+          "syncReason": null,
+          "hasTranscript": false
+        },
+        {
+          "id": "m-design",
+          "title": "Design sync",
+          "kind": "internal",
+          "day": "2026-11-24",
+          "startUtc": "2026-11-24T18:00:00.000Z",
+          "endUtc": "2026-11-24T18:45:00.000Z",
+          "startLocal": "2026-11-24T13:00:00-05:00",
+          "endLocal": "2026-11-24T13:45:00-05:00",
+          "afterHours": false,
+          "earlyStart": false,
+          "attendeeCount": 2,
+          "durationS": 2700,
+          "ouraMorningDay": "2026-11-24",
+          "signals": {
+            "stressHighS": null,
+            "recoveryHighS": null,
+            "stressSummary": null,
+            "stressSource": "none",
+            "readinessProxy": null,
+            "nextSleepScore": null,
+            "nextReadinessScore": null,
+            "nextHrv": null,
+            "nextLowestHr": null,
+            "nextTotalSleepS": null
+          },
+          "score": 0.4,
+          "flags": [],
+          "hrStress": null,
+          "attendees": [
+            {
+              "email": "me@example.com",
+              "self": true,
+              "name": "Me Example"
+            },
+            {
+              "email": "casey.example@example.com",
+              "self": false,
+              "name": "Casey Example"
+            }
+          ],
+          "attendeeNote": null,
+          "sourceType": "calendar",
+          "syncReason": null,
+          "hasTranscript": false
+        },
+        {
+          "id": "m-1on1",
+          "title": "1:1 with Dana",
+          "kind": "internal",
+          "day": "2026-11-24",
+          "startUtc": "2026-11-24T20:00:00.000Z",
+          "endUtc": "2026-11-24T21:00:00.000Z",
+          "startLocal": "2026-11-24T15:00:00-05:00",
+          "endLocal": "2026-11-24T16:00:00-05:00",
+          "afterHours": false,
+          "earlyStart": false,
+          "attendeeCount": 2,
+          "durationS": 3600,
+          "ouraMorningDay": "2026-11-24",
+          "signals": {
+            "stressHighS": null,
+            "recoveryHighS": null,
+            "stressSummary": null,
+            "stressSource": "none",
+            "readinessProxy": null,
+            "nextSleepScore": null,
+            "nextReadinessScore": null,
+            "nextHrv": null,
+            "nextLowestHr": null,
+            "nextTotalSleepS": null
+          },
+          "score": 0.4,
+          "flags": [],
+          "hrStress": null,
+          "attendees": [
+            {
+              "email": "me@example.com",
+              "self": true,
+              "name": "Me Example"
+            },
+            {
+              "email": "dana.sample@example.com",
+              "self": false,
+              "name": "Dana Sample"
+            }
+          ],
+          "attendeeNote": null,
+          "sourceType": "calendar",
+          "syncReason": null,
+          "hasTranscript": false
+        },
+        {
+          "id": "m-board",
+          "title": "Board prep",
+          "kind": "internal",
+          "day": "2026-11-24",
+          "startUtc": "2026-11-24T23:30:00.000Z",
+          "endUtc": "2026-11-25T00:15:00.000Z",
+          "startLocal": "2026-11-24T18:30:00-05:00",
+          "endLocal": "2026-11-24T19:15:00-05:00",
+          "afterHours": true,
+          "earlyStart": false,
+          "attendeeCount": 3,
+          "durationS": 2700,
+          "ouraMorningDay": "2026-11-24",
+          "signals": {
+            "stressHighS": null,
+            "recoveryHighS": null,
+            "stressSummary": null,
+            "stressSource": "none",
+            "readinessProxy": null,
+            "nextSleepScore": null,
+            "nextReadinessScore": null,
+            "nextHrv": null,
+            "nextLowestHr": null,
+            "nextTotalSleepS": null
+          },
+          "score": 0.4,
+          "flags": [
+            "after_hours"
+          ],
+          "hrStress": null,
+          "attendees": [
+            {
+              "email": "me@example.com",
+              "self": true,
+              "name": "Me Example"
+            },
+            {
+              "email": "sam.placeholder@example.com",
+              "self": false,
+              "name": "Sam Placeholder"
+            },
+            {
+              "email": "jordan.fixture@example.com",
+              "self": false,
+              "name": null
+            }
+          ],
+          "attendeeNote": null,
+          "sourceType": "calendar",
+          "syncReason": null,
+          "hasTranscript": false
+        }
+      ]
+    },
+    "priorNight": null,
+    "nextMorning": null,
+    "flags": [
+      "heavy_day",
+      "after_hours"
+    ],
+    "summary": "Five meetings, 4 hours, one after 6 pm. A heavy day.",
+    "hr": null,
+    "wearable": {
+      "source": null,
+      "label": "",
+      "readinessLabel": "Morning score",
+      "strainLabel": null,
+      "strainMax": null,
+      "hasIntradayHr": false,
+      "hrSource": null,
+      "ouraHr": false,
+      "whoopWebHr": false,
+      "tagline": "Calendar",
+      "note": "Wearable display is off."
+    },
+    "methodNote": "Heart rate during the meeting is your WHOOP strap's, minute by minute."
+  },
+  "range": null,
+  "usual": {
+    "from": "2026-10-28",
+    "to": "2026-11-24",
+    "days": 28,
+    "recovery": 68,
+    "sleep": 80,
+    "hrv": 62,
+    "restingHr": 54,
+    "strain": 11.2,
+    "meetingHours": 3.5,
+    "afterHours": 0.6
+  },
+  "effect": {
+    "heavyHours": 4,
+    "heavyMeetings": 5,
+    "heavy": {
+      "days": 5,
+      "nextRecovery": 55
+    },
+    "lighter": {
+      "days": 18,
+      "nextRecovery": 70
+    },
+    "cost": 15,
+    "from": "2026-10-28",
+    "to": "2026-11-24"
+  },
+  "costly": [
+    {
+      "day": "2026-11-12",
+      "meetingCount": 6,
+      "meetingHours": 5.5,
+      "afterHours": 2,
+      "nextRecovery": 31,
+      "nextSleep": 62
+    },
+    {
+      "day": "2026-11-05",
+      "meetingCount": 5,
+      "meetingHours": 4.5,
+      "afterHours": 1,
+      "nextRecovery": 38,
+      "nextSleep": 70
+    },
+    {
+      "day": "2026-11-17",
+      "meetingCount": 4,
+      "meetingHours": 4,
+      "afterHours": 0,
+      "nextRecovery": 44,
+      "nextSleep": 74
+    }
+  ],
+  "people": [
+    {
+      "email": "dana.sample@example.com",
+      "name": "Dana Sample",
+      "heavyDays": 4,
+      "meetings": 7
+    },
+    {
+      "email": "jordan.fixture@example.com",
+      "name": null,
+      "heavyDays": 2,
+      "meetings": 3
+    }
+  ],
+  "series": [
+    {
+      "day": "2026-11-24",
+      "meetingCount": 5,
+      "meetingHours": 4,
+      "afterHours": 1,
+      "recovery": 72,
+      "sleep": 84,
+      "strain": 9.8,
+      "nextRecovery": null
+    }
+  ],
+  "hits": null,
+  "baselineNote": "Compared with your other meetings over the past 14 days."
+}

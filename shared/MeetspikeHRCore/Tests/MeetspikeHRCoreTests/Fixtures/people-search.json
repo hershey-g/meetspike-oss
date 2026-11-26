@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "people": [
+    {
+      "email": "dana.sample@example.com",
+      "name": "Dana Sample"
+    },
+    {
+      "email": "jordan.fixture@example.com",
+      "name": null
+    }
+  ]
+}

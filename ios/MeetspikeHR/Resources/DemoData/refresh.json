@@ -1,0 +1,16 @@
+{
+  "calendar": {
+    "ok": true,
+    "sync": "incremental",
+    "written": 2
+  },
+  "whoop": {
+    "ok": true,
+    "skipped": "recent"
+  },
+  "oura": {
+    "ok": true,
+    "pending": true
+  },
+  "syncedAt": "2026-11-24T14:10:00.000Z"
+}

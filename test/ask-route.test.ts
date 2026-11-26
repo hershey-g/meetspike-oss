@@ -2,19 +2,14 @@ import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
 import { api } from "../src/routes/api.ts";
 import { saveAiKey } from "../src/lib/ai-key.ts";
+import { calendarDayInZone } from "../src/lib/time.ts";
+import { questionRange } from "../src/lib/history-range.ts";
 import type { Env } from "../src/env.ts";
+import { fakeKv, sqliteD1 } from "./sqlite-d1.ts";
+import { setSourceDisplay } from "../src/lib/source-display.ts";
 
 const SECRET = "s".repeat(40);
 const KEY = "sk-ant-api03-test-test-test-test-test-test-0000";
-
-function fakeKv() {
-  const store = new Map<string, string>();
-  return {
-    get: async (k: string) => store.get(k) ?? null,
-    put: async (k: string, v: string) => void store.set(k, v),
-    delete: async (k: string) => void store.delete(k),
-  };
-}
 
 const ROWS: Record<string, Array<Record<string, unknown>>> = {
   calendar_event: [
@@ -43,7 +38,9 @@ function fakeDb() {
       const stmt = {
         bind: () => stmt,
         all: async () => ({ results: ROWS[table] ?? [] }),
-        first: async () => null,
+        first: async () => sql.includes("AS first_meeting") ? {
+          first_meeting: "2026-11-05T15:00:00.000Z", first_metric: "2023-01-01",
+        } : null,
         run: async () => ({ success: true }),
       };
       return stmt;
@@ -52,7 +49,9 @@ function fakeDb() {
 }
 
 async function envWithKey(): Promise<Env> {
-  const env = { WEARABLE: "whoop", AI_KEY_SECRET: SECRET, TOKENS: fakeKv(), DB: fakeDb() } as unknown as Env;
+  const env = { WEARABLE: "whoop", AI_KEY_SECRET: SECRET,
+    TOKENS: fakeKv({ "settings:source_display:whoop": "true", "settings:source_display:oura": "true" }),
+    DB: fakeDb() } as unknown as Env;
   await saveAiKey(env, KEY);
   return env;
 }
@@ -93,6 +92,73 @@ const MESSAGE = {
 };
 
 describe("POST /api/ask", () => {
+  it("uses calendar data and drops prior turns when both sources are turned off", async () => {
+    const env = await envWithKey();
+    await setSourceDisplay(env, "oura", false);
+    await setSourceDisplay(env, "whoop", false);
+    const calls = stubAnthropic(MESSAGE);
+    const { status } = await post("/ask", {
+      question: "Who did I meet?",
+      start: "2026-11-05",
+      end: "2026-11-05",
+      sourceDisplay: { oura: true, whoop: true },
+      history: [{ role: "user", content: "How did I score?" }, { role: "assistant", content: "WHOOP recovery 44" }],
+    }, env);
+    assert.equal(status, 200);
+    const { system, messages } = calls[0].body;
+    assert.match(system[1].text, /Client review/);
+    assert.doesNotMatch(system[1].text, /WHOOP|Oura|woke|44/);
+    assert.deepEqual(messages, [{ role: "user", content: "Who did I meet?" }]);
+  });
+
+  it("uses the earliest stored history, a question period, and an explicit selection", async () => {
+    const env = await envWithKey();
+    const calls = stubAnthropic(MESSAGE);
+    const all = await post("/ask", { question: "What have you found over time?" }, env);
+    assert.equal(all.status, 200);
+    assert.equal(all.body.start, "2023-01-01");
+    assert.match(calls[0].body.system[1].text, /Selected history: 2023-01-01 to/);
+
+    const question = "What happened in the past three months?";
+    const rolling = await post("/ask", { question }, env);
+    const today = calendarDayInZone(new Date().toISOString());
+    assert.equal(rolling.body.start, questionRange(question, today)?.start);
+    assert.equal(rolling.body.end, today);
+
+    // Build 10: a period in the question beats the tab's range (it used to be the other way round).
+    const selected = await post("/ask", { question, start: "2024-01-01", end: "2026-11-12" }, env);
+    assert.equal(selected.status, 200);
+    assert.equal(selected.body.start, questionRange(question, today)?.start);
+    assert.equal(selected.body.end, today);
+
+    // With no period in the question, the tab's range still applies.
+    const tabbed = await post("/ask", { question: "Which day cost me most?", start: "2024-01-01", end: "2026-11-12" }, env);
+    assert.equal(tabbed.status, 200);
+    assert.equal(tabbed.body.start, "2024-01-01");
+    assert.equal(tabbed.body.end, "2026-11-12");
+    assert.match(calls[3].body.system[1].text, /Client review/);
+  });
+
+  it("includes secondary-only dates in sparse full history and keeps scores tied to their wearable", async () => {
+    const { db, raw } = sqliteD1();
+    try {
+      raw.exec(`INSERT INTO daily_readiness (source, day, score, updated_at) VALUES
+        ('oura', '2012-01-15', 83, 'now'),
+        ('whoop', '2025-12-30', 47, 'now')`);
+      const env = await envWithKey();
+      env.DB = db;
+      const calls = stubAnthropic(MESSAGE);
+      const res = await post("/ask", { question: "What have you found over time?" }, env);
+      assert.equal(res.status, 200);
+      assert.equal(res.body.start, "2012-01-15");
+      const data = calls[0].body.system[1].text;
+      assert.match(data, /2012-01-15[^\n]*woke: no data[^\n]*\n +readiness \(Oura\): woke 83/);
+      assert.match(data, /2025-12-30[^\n]*woke recovery 47/);
+    } finally {
+      raw.close();
+    }
+  });
+
   it("sends the question with the user's key, the data block, effort and fallbacks, and returns the text", async () => {
     const env = await envWithKey();
     const calls = stubAnthropic(MESSAGE);

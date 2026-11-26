@@ -249,7 +249,7 @@ function emptyDb(): D1Database {
 }
 
 async function get(path: string): Promise<{ status: number; body: Record<string, any> }> {
-  const res = await api.request(path, {}, { DB: emptyDb() } as never);
+  const res = await api.request(path, {}, { DB: emptyDb(), TOKENS: { get: async () => null } } as never);
   return { status: res.status, body: (await res.json()) as Record<string, any> };
 }
 
@@ -257,16 +257,13 @@ describe("date-scoped routes", () => {
   it("reject invalid ranges with a clear 400", async () => {
     const cases: Array<[string, RegExp]> = [
       ["/briefing/range?start=2026-11-10&end=2026-11-01", /end must be on or after start/],
-      ["/briefing/range?start=2026-01-01&end=2026-12-31", /range cannot exceed 92 days \(got 365\)/],
       ["/briefing/range?start=garbage&end=2026-11-01", /start must be a valid YYYY-MM-DD date/],
       ["/briefing/day?date=2026-02-30", /date must be a valid YYYY-MM-DD date/],
       ["/briefing/day?start=2026-11-10&end=2026-11-01", /end must be on or after start/],
       ["/briefing/day?date=2026-11-05&end=2026-11-06", /either date or start\/end/],
       ["/briefing/week?date=2026-13-40", /date must be a valid YYYY-MM-DD date/],
-      ["/insights/hits?start=2026-01-01&end=2026-12-31", /range cannot exceed 92 days/],
       ["/insights/hits?start=2026-11-10&end=2026-11-01", /end must be on or after start/],
       ["/meetings/stressed?from=2026-11-10&to=2026-11-01", /end must be on or after start/],
-      ["/meetings/stressed?start=2026-01-01&end=2026-12-31", /range cannot exceed 92 days/],
       ["/meetings/sleep-impact?from=nope", /start must be a valid YYYY-MM-DD date/],
       ["/people/a%40example.com/meetings?start=2026-11-10&end=2026-11-01", /end must be on or after start/],
     ];
@@ -298,6 +295,13 @@ describe("date-scoped routes", () => {
     const oneDay = await get("/briefing/range?date=2026-11-05");
     assert.equal(oneDay.body.singleDay, true);
     assert.equal(oneDay.body.days.length, 1);
+  });
+
+  it("accepts a year in range, insights, daily metrics, and meeting reads", async () => {
+    for (const route of ["/briefing/range", "/insights/hits", "/metrics/daily", "/meetings/stressed"]) {
+      const result = await get(`${route}?start=2025-11-22&end=2026-11-21`);
+      assert.equal(result.status, 200, route);
+    }
   });
 
   it("scope hits and person history to start/end, and keep the rolling default", async () => {

@@ -1,0 +1,38 @@
+event: step
+data: {"id": "calendar", "label": "Reading your calendar", "status": "active"}
+
+: ping
+
+event: step
+data: {"id": "calendar", "label": "Read 19 meetings from Oct 28 to Nov 24", "status": "done"}
+
+event: step
+data: {"id": "body", "label": "Lining up sleep and recovery", "status": "active"}
+
+event: step
+data: {"id": "body", "label": "Lined up 27 nights of WHOOP scores", "status": "done"}
+
+event: step
+data: {"id": "think", "label": "Thinking it through", "status": "active"}
+
+event: step
+data: {"id": "think", "label": "Thought it through", "status": "done"}
+
+event: step
+data: {"id": "write", "label": "Writing the answer", "status": "active"}
+
+event: text
+data: {"delta": "Heavy days cost you about **15 points** of recovery.\n\n"}
+
+event: text
+data: {"delta": "- 5 heavy days: 55% next morning\n- 18 lighter days: 70%\n\n"}
+
+event: text
+data: {"delta": "| Day | Meetings | Next recovery |\n|---|---|---|\n| Nov 12 | 6 | 31% |\n| Nov 5 | 5 | 38% |\n"}
+
+event: step
+data: {"id": "write", "label": "Wrote the answer", "status": "done"}
+
+event: done
+data: {"truncated": false, "model": "claude-opus-5-5", "start": "2026-10-28", "end": "2026-11-24"}
+

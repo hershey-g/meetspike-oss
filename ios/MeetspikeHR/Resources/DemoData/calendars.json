@@ -1,0 +1,29 @@
+{
+  "ok": true,
+  "accounts": [
+    {
+      "email": "you@example.com",
+      "connectedAt": "2026-09-02T14:10:00.000Z",
+      "lastSyncAt": "2026-11-24T15:45:00.000Z",
+      "error": null,
+      "calendars": [
+        { "id": "you@example.com", "name": "you@example.com", "primary": true, "selected": true, "color": "#9fc6e7", "accessRole": "owner", "lastSyncAt": "2026-11-24T15:45:00.000Z", "error": null },
+        { "id": "family@group.calendar.example", "name": "Family", "primary": false, "selected": false, "color": "#f691b2", "accessRole": "writer", "lastSyncAt": null, "error": null }
+      ]
+    },
+    {
+      "email": "you@work.example",
+      "connectedAt": "2026-11-20T09:00:00.000Z",
+      "lastSyncAt": "2026-11-24T15:45:00.000Z",
+      "error": null,
+      "calendars": [
+        { "id": "you@work.example", "name": "you@work.example", "primary": true, "selected": true, "color": "#16a765", "accessRole": "owner", "lastSyncAt": "2026-11-24T15:45:00.000Z", "error": null },
+        { "id": "team@group.calendar.example", "name": "Team calendar", "primary": false, "selected": true, "color": "#ffad46", "accessRole": "reader", "lastSyncAt": "2026-11-24T15:45:00.000Z", "error": null },
+        { "id": "holidays@group.v.calendar.example", "name": "Holidays in United States", "primary": false, "selected": false, "color": "#cca6ac", "accessRole": "reader", "lastSyncAt": null, "error": null }
+      ]
+    }
+  ],
+  "connectPath": "/auth/google/start",
+  "setupPath": "/setup#calendars",
+  "legacyError": null
+}

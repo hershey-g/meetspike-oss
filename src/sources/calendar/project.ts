@@ -33,6 +33,8 @@ export type GoogleAttendee = {
 
 export type GoogleCalendarEvent = {
   id?: string;
+  /** Same for every copy of one meeting (other calendars, other accounts). With the start, the dedupe key. */
+  iCalUID?: string;
   status?: string;
   summary?: string;
   location?: string;

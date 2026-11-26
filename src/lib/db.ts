@@ -1,4 +1,5 @@
 import type { CalendarEventRow, Projected } from "../types.ts";
+import { cacheNames } from "./person-names.ts";
 import { SOURCE_OURA } from "../types.ts";
 import { DEFAULT_TIME_ZONE } from "./time.ts";
 import { parseAttendeesJson, type Attendee } from "./people.ts";
@@ -185,6 +186,10 @@ export async function replaceEventAttendees(
       .bind(eventId, source, a.email, a.self ? 1 : 0, a.name),
   );
   await db.batch(stmts);
+  // Remember Google displayNames per email (person_name, migration 0009), so a
+  // later meeting where Google sends only the address still shows the name.
+  const named = attendees.filter((a) => !a.self && a.name).map((a) => ({ email: a.email, name: a.name as string }));
+  if (named.length) await cacheNames(db, named, "calendar");
 }
 
 export async function applyProjected(db: D1Database, item: Projected): Promise<void> {

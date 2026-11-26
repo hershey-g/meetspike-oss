@@ -140,8 +140,8 @@ async function get(path: string, env: Record<string, unknown>) {
 }
 
 describe("API — WEARABLE=whoop vs WEARABLE=oura", () => {
-  const whoopEnv = () => ({ WEARABLE: "whoop", DB: fakeDb(DAY_ROWS), TOKENS: fakeKv(), RAW: untouchableRaw });
-  const ouraEnv = () => ({ WEARABLE: "oura", DB: fakeDb(DAY_ROWS), TOKENS: fakeKv(), RAW: { get: async () => ({ text: async () => HR_DOC }) } });
+  const whoopEnv = () => ({ WEARABLE: "whoop", DB: fakeDb(DAY_ROWS), TOKENS: fakeKv({ "settings:source_display:whoop": "true" }), RAW: untouchableRaw });
+  const ouraEnv = () => ({ WEARABLE: "oura", DB: fakeDb(DAY_ROWS), TOKENS: fakeKv({ "settings:source_display:oura": "true" }), RAW: { get: async () => ({ text: async () => HR_DOC }) } });
 
   it("Oura: the day carries the heart-rate strip and a per-meeting heart-rate reading", async () => {
     const { status, body } = await get("/briefing/day?date=2026-11-05", ouraEnv());
@@ -195,7 +195,7 @@ describe("API — WEARABLE=whoop vs WEARABLE=oura", () => {
   });
 
   it("Oura: range wording and notes are unchanged", async () => {
-    const env = { WEARABLE: "oura", DB: fakeDb(), TOKENS: fakeKv(), RAW: untouchableRaw };
+    const env = { WEARABLE: "oura", DB: fakeDb(), TOKENS: fakeKv({ "settings:source_display:oura": "true" }), RAW: untouchableRaw };
     const range = await get("/briefing/range?start=2026-11-03&end=2026-11-06", env);
     assert.equal(range.body.wearable.source, "oura");
     assert.deepEqual(range.body.grain, { ...GRAIN_NOTE });
@@ -206,20 +206,20 @@ describe("API — WEARABLE=whoop vs WEARABLE=oura", () => {
 
   it("health reports the active wearable and its own token", async () => {
     const tokens = { "whoop:tokens": JSON.stringify({ access_token: "a", expires_at: "2030-01-01T00:00:00.000Z" }) };
-    const whoop = await get("/health", { WEARABLE: "whoop", OURA_SANDBOX: "true", DB: fakeDb(), TOKENS: fakeKv(tokens) });
+    const whoop = await get("/health", { WEARABLE: "whoop", OURA_SANDBOX: "true", DB: fakeDb(), TOKENS: fakeKv({ ...tokens, "settings:source_display:whoop": "true" }) });
     assert.equal(whoop.body.wearable.source, "whoop");
     assert.equal(whoop.body.wearable.chosenBy, "configured");
     assert.equal(whoop.body.token.present, true);
     assert.equal(whoop.body.sandbox, false, "WHOOP has no sandbox");
     assert.equal(whoop.body.counts.daily_strain, 0);
 
-    const oura = await get("/health", { WEARABLE: "oura", DB: fakeDb(), TOKENS: fakeKv(tokens) });
+    const oura = await get("/health", { WEARABLE: "oura", DB: fakeDb(), TOKENS: fakeKv({ ...tokens, "settings:source_display:oura": "true" }) });
     assert.equal(oura.body.wearable.source, "oura");
     assert.equal(oura.body.token.present, false, "a WHOOP token does not count for Oura");
     assert.equal(oura.body.sandbox, true);
     assert.equal("daily_strain" in oura.body.counts, false);
 
-    const legacy = await get("/health", { OURA_CLIENT_ID: "x", DB: fakeDb(), TOKENS: fakeKv() });
+    const legacy = await get("/health", { OURA_CLIENT_ID: "x", DB: fakeDb(), TOKENS: fakeKv({ "settings:source_display:oura": "true" }) });
     assert.equal(legacy.body.wearable.source, "oura");
     assert.equal(legacy.body.wearable.chosenBy, "legacy_oura");
   });

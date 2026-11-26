@@ -54,7 +54,7 @@ describe("attendee emails", () => {
     const list = extractAttendees({
       attendees: [
         { email: "you@example.com", self: true, displayName: "You" },
-        { email: "jroberts@lender.example", displayName: "Jamie Roberts" },
+        { email: "dana.sample@lender.example", displayName: "Dana Sample" },
         { email: "room@example.com", displayName: "Boardroom", resource: true },
         { email: "no-name@client.example" },
       ],
@@ -63,16 +63,16 @@ describe("attendee emails", () => {
       list.map((a) => ({ email: a.email, name: a.name })),
       [
         { email: "you@example.com", name: "You" },
-        { email: "jroberts@lender.example", name: "Jamie Roberts" },
+        { email: "dana.sample@lender.example", name: "Dana Sample" },
         { email: "no-name@client.example", name: null },
       ],
     );
   });
 
   it("does not invent a name from an email", () => {
-    assert.equal(normalizePersonName("jroberts@lender.example"), null);
+    assert.equal(normalizePersonName("dana.sample@lender.example"), null);
     assert.equal(normalizePersonName("  "), null);
-    assert.equal(normalizePersonName("Jamie Roberts"), "Jamie Roberts");
+    assert.equal(normalizePersonName("Dana Sample"), "Dana Sample");
     const parsed = parseAttendeesJson(
       JSON.stringify([{ email: "pat@client.example", self: false, name: "Pat Okonkwo" }]),
     );

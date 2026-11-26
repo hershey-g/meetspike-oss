@@ -15,12 +15,15 @@ describe("parseDayRange", () => {
     assert.equal(inclusiveDayCount(r.start, r.end), 30);
   });
 
-  it("rejects inverted and oversized ranges", () => {
+  it("rejects inverted or invalid dates and accepts multi-year ranges", () => {
     assert.deepEqual(parseDayRange("2026-09-22", "2026-09-01", "2026-09-22"), {
       error: "start must be on or before end",
     });
-    assert.deepEqual(parseDayRange("2026-01-01", "2026-09-22", "2026-09-22"), {
-      error: "range cannot exceed 90 days",
+    assert.deepEqual(parseDayRange("2024-01-01", "2026-09-22", "2026-09-22"), {
+      start: "2024-01-01", end: "2026-09-22",
+    });
+    assert.deepEqual(parseDayRange("2026-02-30", "2026-09-22", "2026-09-22"), {
+      error: "start must be YYYY-MM-DD",
     });
     assert.deepEqual(parseDayRange("22-09-2026", undefined, "2026-09-22"), {
       error: "start must be YYYY-MM-DD",

@@ -24,25 +24,25 @@ describe("setup — reading the config", () => {
 
   it("finds every resource name the template asks for", () => {
     assert.deepEqual(lib.resourceNames(lib.parseJsonc(template)), {
+      worker: "hg-biometrics",
+      d1: "hg-biometrics-db",
+      kv: "hg-biometrics-tokens",
+      r2: "hg-biometrics-raw",
+      queues: ["hg-biometrics-ingest", "hg-biometrics-ingest-dlq"],
+    });
+  });
+
+  it("renames every resource with --name, and leaves the template alone without it", () => {
+    const renamed = lib.resourceNames(lib.parseJsonc(lib.renameWorker(template, "meetspike")));
+    assert.deepEqual(renamed, {
       worker: "meetspike",
       d1: "meetspike-db",
       kv: "meetspike-tokens",
       r2: "meetspike-raw",
       queues: ["meetspike-ingest", "meetspike-ingest-dlq"],
     });
-  });
-
-  it("renames every resource with --name, and leaves the template alone without it", () => {
-    const renamed = lib.resourceNames(lib.parseJsonc(lib.renameWorker(template, "stressboard")));
-    assert.deepEqual(renamed, {
-      worker: "stressboard",
-      d1: "stressboard-db",
-      kv: "stressboard-tokens",
-      r2: "stressboard-raw",
-      queues: ["stressboard-ingest", "stressboard-ingest-dlq"],
-    });
     assert.equal(lib.renameWorker(template, null), template);
-    assert.equal(lib.renameWorker(template, "meetspike"), template);
+    assert.equal(lib.renameWorker(template, "hg-biometrics"), template);
   });
 
   it("keeps the tracked template free of real ids and of a WEARABLE value", () => {
@@ -61,7 +61,7 @@ describe("setup — options", () => {
     assert.equal(lib.parseArgs(["--dry-run"]).dryRun, true);
     assert.equal(lib.parseArgs(["--wearable", "oura"]).wearable, "oura");
     assert.equal(lib.parseArgs(["--wearable=WHOOP"]).wearable, "whoop");
-    assert.equal(lib.parseArgs(["--name=stressboard", "--skip-migrations"]).name, "stressboard");
+    assert.equal(lib.parseArgs(["--name=meetspike", "--skip-migrations"]).name, "meetspike");
   });
 
   it("rejects what it does not understand", () => {
@@ -76,24 +76,24 @@ describe("setup — reuse what exists (idempotent names)", () => {
     const out = `
  ⛅️ wrangler 4.x
 [
-  { "uuid": "${D1_ID}", "name": "meetspike-db", "version": "production" },
-  { "uuid": "99999999-0000-0000-0000-000000000000", "name": "meetspike-db-old" }
+  { "uuid": "${D1_ID}", "name": "hg-biometrics-db", "version": "production" },
+  { "uuid": "99999999-0000-0000-0000-000000000000", "name": "hg-biometrics-db-old" }
 ]`;
-    assert.equal(lib.findD1(out, "meetspike-db"), D1_ID);
-    assert.equal(lib.findD1(out, "meetspike"), null, "a prefix is not a match");
-    assert.equal(lib.findD1("[]", "meetspike-db"), null);
-    assert.equal(lib.findD1("not json", "meetspike-db"), null);
+    assert.equal(lib.findD1(out, "hg-biometrics-db"), D1_ID);
+    assert.equal(lib.findD1(out, "hg-biometrics"), null, "a prefix is not a match");
+    assert.equal(lib.findD1("[]", "hg-biometrics-db"), null);
+    assert.equal(lib.findD1("not json", "hg-biometrics-db"), null);
   });
 
   it("finds a KV namespace by title, including the older worker-prefixed title", () => {
     const list = JSON.stringify([
       { id: "ffffffffffffffffffffffffffffffff", title: "someone-elses-tokens" },
-      { id: KV_ID, title: "meetspike-tokens" },
+      { id: KV_ID, title: "hg-biometrics-tokens" },
     ]);
-    assert.equal(lib.findKv(list, "meetspike-tokens", "meetspike"), KV_ID);
-    const legacy = JSON.stringify([{ id: KV_ID, title: "meetspike-meetspike-tokens" }]);
-    assert.equal(lib.findKv(legacy, "meetspike-tokens", "meetspike"), KV_ID);
-    assert.equal(lib.findKv(list, "stressboard-tokens", "stressboard"), null);
+    assert.equal(lib.findKv(list, "hg-biometrics-tokens", "hg-biometrics"), KV_ID);
+    const legacy = JSON.stringify([{ id: KV_ID, title: "hg-biometrics-hg-biometrics-tokens" }]);
+    assert.equal(lib.findKv(legacy, "hg-biometrics-tokens", "hg-biometrics"), KV_ID);
+    assert.equal(lib.findKv(list, "meetspike-tokens", "meetspike"), null);
   });
 
   it("matches whole names in text listings, so ingest is not confused with ingest-dlq", () => {
@@ -101,15 +101,15 @@ describe("setup — reuse what exists (idempotent names)", () => {
 ┌──────────┬──────────────────────────┬───────────┐
 │ id       │ name                     │ producers │
 ├──────────┼──────────────────────────┼───────────┤
-│ 0a1b     │ meetspike-ingest-dlq │ 0         │
+│ 0a1b     │ hg-biometrics-ingest-dlq │ 0         │
 └──────────┴──────────────────────────┴───────────┘`;
-    assert.equal(lib.listHasName(queues, "meetspike-ingest-dlq"), true);
-    assert.equal(lib.listHasName(queues, "meetspike-ingest"), false);
-    const buckets = "name:           meetspike-raw\ncreation_date:  2026-01-01T00:00:00.000Z\n";
-    assert.equal(lib.listHasName(buckets, "meetspike-raw"), true);
-    assert.equal(lib.listHasName(buckets, "meetspike"), false);
-    assert.equal(lib.listHasName(JSON.stringify([{ name: "meetspike-raw" }]), "meetspike-raw"), true);
-    assert.equal(lib.listHasName("", "meetspike-raw"), false);
+    assert.equal(lib.listHasName(queues, "hg-biometrics-ingest-dlq"), true);
+    assert.equal(lib.listHasName(queues, "hg-biometrics-ingest"), false);
+    const buckets = "name:           hg-biometrics-raw\ncreation_date:  2026-01-01T00:00:00.000Z\n";
+    assert.equal(lib.listHasName(buckets, "hg-biometrics-raw"), true);
+    assert.equal(lib.listHasName(buckets, "hg-biometrics"), false);
+    assert.equal(lib.listHasName(JSON.stringify([{ name: "hg-biometrics-raw" }]), "hg-biometrics-raw"), true);
+    assert.equal(lib.listHasName("", "hg-biometrics-raw"), false);
   });
 
   it("treats “already exists” from a create as success, and other errors as errors", () => {
@@ -138,7 +138,7 @@ describe("setup — writing the production config", () => {
     assert.deepEqual(warnings, []);
     assert.doesNotMatch(text, /REPLACE_/);
     assert.match(text, /\/\/ Template\./);
-    assert.equal(cfg.name, "meetspike");
+    assert.equal(cfg.name, "hg-biometrics");
   });
 
   it("is a no-op on a second run", () => {
@@ -201,8 +201,8 @@ describe("setup — safety", () => {
   it("--dry-run prints the plan, runs nothing and writes no file", () => {
     const before = existsSync(`${root}wrangler.production.jsonc`);
     const out = execFileSync(process.execPath, [`${root}scripts/setup.mjs`, "--dry-run", "--wearable", "oura"], { encoding: "utf8" });
-    assert.match(out, /Meetspike setup for the Worker "meetspike"/);
-    assert.match(out, /D1 database "meetspike-db": reuse if it exists, otherwise create/);
+    assert.match(out, /Meetspike setup for the Worker "hg-biometrics"/);
+    assert.match(out, /D1 database "hg-biometrics-db": reuse if it exists, otherwise create/);
     assert.match(out, /Dry run: nothing was created and no file was written\./);
     assert.equal(existsSync(`${root}wrangler.production.jsonc`), before);
   });

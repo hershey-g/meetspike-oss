@@ -238,7 +238,7 @@ function recordingDb(opts: { rawExists?: boolean } = {}) {
           if (/INSERT INTO raw_object/.test(sql)) {
             writes.push({ sql, args });
             nextId += 1;
-            return { id: nextId };
+            return { id: nextId, projection_pending: args[7], fetched_at: args[6] };
           }
           return null;
         },

@@ -22,7 +22,7 @@
       <p class="eyebrow">First-time setup</p>
       <h1>Set up Meetspike</h1>
       <p class="baseline">
-        About 15 minutes. You will connect a wearable and your Google Calendar. Nothing here is shared with anyone:
+        About 15 minutes. You can connect WHOOP, Oura, or both, plus your Google Calendar. Nothing here is shared with anyone:
         the data stays in your own Cloudflare account.
       </p>
     </header>
@@ -31,29 +31,12 @@
       <p class="error" id="setup-error" hidden></p>
 
       <section class="step" id="step-wearable">
-        <h2><span class="num">1</span> Which wearable do you use?</h2>
+        <h2><span class="num">1</span> Which wearable would you like to connect?</h2>
         <div class="choice" role="radiogroup" aria-label="Wearable">
           <label><input type="radio" name="wearable" value="whoop" /> WHOOP</label>
           <label><input type="radio" name="wearable" value="oura" /> Oura ring</label>
         </div>
         <p class="stat" id="wearable-current"></p>
-        <div class="how" id="wearable-switch" hidden>
-          <p>
-            This install is set to <strong id="wearable-active"></strong>. To use
-            <strong id="wearable-wanted"></strong> instead, change one setting:
-          </p>
-          <ol>
-            <li>Open <a href="https://dash.cloudflare.com/?to=/:account/workers-and-pages" target="_blank" rel="noopener">Cloudflare → Workers &amp; Pages</a> and click this Worker.</li>
-            <li>Go to <strong>Settings</strong> → <strong>Variables and Secrets</strong> → <strong>Add</strong>.</li>
-            <li>Type: <strong>Secret</strong>. Name: <code>WEARABLE</code>. Value: <code id="wearable-value"></code>. Click <strong>Deploy</strong>.</li>
-            <li>Come back here and press <strong>Check again</strong>.</li>
-          </ol>
-          <p class="method">
-            Prefer a terminal? <code>npx wrangler secret put WEARABLE</code>, then type <code id="wearable-value-2"></code>.
-            If you ran <code>npm run setup</code>, you can instead change <code>WEARABLE</code> in
-            <code>wrangler.production.jsonc</code> and deploy again.
-          </p>
-        </div>
         <p class="method" id="wearable-why"></p>
       </section>
 
@@ -105,7 +88,7 @@
         <ol>
           <li>Open <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">Google Cloud → Credentials</a>. Create a project if it asks you to.</li>
           <li>Turn on the calendar: open <a href="https://console.cloud.google.com/apis/library/calendar-json.googleapis.com" target="_blank" rel="noopener">Google Calendar API</a> and press <strong>Enable</strong>.</li>
-          <li>Back on Credentials: <strong>Create credentials</strong> → <strong>OAuth client ID</strong> → Application type <strong>Web application</strong>. If Google first asks you to set up a consent screen, choose “External” and add your own email as a test user.</li>
+          <li>Back on Credentials: <strong>Create credentials</strong> → <strong>OAuth client ID</strong> → Application type <strong>Web application</strong>. If Google first asks you to set up a consent screen, choose “External” and add your own email as a test user. Add every Google account you plan to connect as a test user.</li>
           <li>
             Under <strong>Authorized redirect URIs</strong> add exactly this:
             <span class="copy-row"><code id="google-redirect"></code> <button type="button" class="btn light" data-copy="google-redirect">Copy</button></span>
@@ -119,6 +102,12 @@
           <a class="btn light" id="connect-google" href="/auth/google/start">Connect Google Calendar</a>
           <button type="button" class="btn ghost" data-action="recheck">Check again</button>
         </p>
+        <div class="calendars" id="calendars" hidden>
+          <h3>Calendars that count as meetings</h3>
+          <p class="method">Pick calendars in each account. Every account you connect counts as you. A meeting on two calendars counts once.</p>
+          <div id="calendar-accounts"></div>
+          <p class="stat" id="calendars-state" role="status"></p>
+        </div>
       </section>
 
       <section class="step" id="step-data">
@@ -153,6 +142,34 @@
           </li>
         </ol>
         <p class="method">The README has the same steps with more detail.</p>
+      </section>
+
+      <section class="step" id="step-phone">
+        <h2><span class="num">8</span> Connect your iPhone</h2>
+        <p>
+          Scan a code instead of typing secrets. Open the Camera on your iPhone, or in Meetspike go to
+          <strong>Menu</strong> → <strong>Phone settings</strong> → <strong>Scan setup code</strong>.
+        </p>
+        <p class="method">
+          First time? The Worker checks your Access sign-in itself before it makes a code. Set
+          <code>ACCESS_TEAM_DOMAIN</code> (your <code>https://&lt;team&gt;.cloudflareaccess.com</code> address) and
+          <code>ACCESS_AUD</code> (the Application Audience tag of the Access app from step 7) on the Worker.
+        </p>
+        <p>
+          <button type="button" class="btn light" data-action="pair">Show setup code</button>
+        </p>
+        <div class="pair" id="pair-box" hidden>
+          <div class="qr" id="pair-qr"></div>
+          <div class="pair-info">
+            <p class="stat" id="pair-expiry" role="status"></p>
+            <p class="method" id="pair-access"></p>
+            <p class="method">
+              The code works once and holds no secrets. Reading this on your iPhone?
+              <a id="pair-open" href="#">Open in Meetspike</a>
+            </p>
+          </div>
+        </div>
+        <p class="error" id="pair-error" hidden></p>
       </section>
     </main>
 

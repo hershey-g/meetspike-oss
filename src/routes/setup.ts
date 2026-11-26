@@ -34,7 +34,7 @@ export type SetupStatus = {
   whoop: SetupProvider;
   oura: SetupProvider;
   google: SetupProvider;
-  /** True once the active wearable and Google Calendar are both connected. */
+  /** True once at least one wearable and Google Calendar are connected. */
   ready: boolean;
 };
 
@@ -75,7 +75,6 @@ export async function setupStatus(env: Env, requestUrl: string): Promise<SetupSt
     secrets: { GOOGLE_CLIENT_ID: has(env.GOOGLE_CLIENT_ID), GOOGLE_CLIENT_SECRET: has(env.GOOGLE_CLIENT_SECRET) },
     connected: Boolean(googleTokens),
   };
-  const active = choice.source === "whoop" ? whoop : oura;
   return {
     ok: true,
     origin: new URL(requestUrl).origin,
@@ -87,6 +86,6 @@ export async function setupStatus(env: Env, requestUrl: string): Promise<SetupSt
     whoop,
     oura,
     google,
-    ready: active.connected && google.connected,
+    ready: (whoop.connected || oura.connected) && google.connected,
   };
 }

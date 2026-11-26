@@ -1,13 +1,12 @@
 import type { Env } from "../../env.ts";
 import { SOURCE_OURA, type Projected } from "../../types.ts";
-import { canonicalJson, r2Key, sha256Hex } from "../../lib/hash.ts";
 import { nowIso } from "../../lib/time.ts";
-import { findRaw, insertRaw, applyProjected, tombstone } from "../../lib/db.ts";
-import { putRawJson } from "../../lib/r2.ts";
+import { applyProjected, tombstone } from "../../lib/db.ts";
+import { archiveWearableDocument } from "../../lib/wearable-archive.ts";
 import { projectDocument, enrichDailySleepFromPeriod } from "./project.ts";
 import { documentsForEndpoint, makeSandboxFixtures } from "./fixtures.ts";
 import { ACTIVE_ENDPOINTS } from "./endpoints.ts";
-import { listDocuments, fetchDocument } from "./client.ts";
+import { listDocuments, fetchDocument, type OuraPacing } from "./client.ts";
 import { writeSyncLog } from "../../lib/synclog.ts";
 import { dayFromHeartrateDoc } from "../../lib/heartrate.ts";
 
@@ -20,38 +19,17 @@ export async function ingestOneDocument(
   fetchedAt = nowIso(),
 ): Promise<"written" | "skipped"> {
   const rec = (doc ?? {}) as Record<string, unknown>;
-  const body = canonicalJson(doc);
-  const hash = await sha256Hex(body);
-  const documentId =
-    typeof rec.id === "string" ? rec.id : `${endpointKey}:${hash.slice(0, 12)}`;
-  const day =
-    typeof rec.day === "string"
-      ? rec.day
-      : endpointKey === "heartrate"
-        ? dayFromHeartrateDoc(doc)
-        : null;
-  const existing = await findRaw(env.DB, endpointKey, documentId, hash);
-  if (existing) return "skipped";
-
-  const key = r2Key(SOURCE_OURA, endpointKey, documentId, hash);
-  await putRawJson(env, key, body);
-  const rawId = await insertRaw(env.DB, {
-    endpoint: endpointKey,
-    documentId,
-    day,
-    r2Key: key,
-    hash,
-    fetchedAt,
-  });
-  const projected = projectDocument(endpointKey, doc, rawId, fetchedAt);
-  for (const item of projected) {
-    if (item.kind === "archive_only" || item.kind === "skipped") continue;
-    await applyProjected(env.DB, item);
-    if (item.kind === "sleep_period" && !item.row.is_nap) {
-      await enrichDailyFromPeriod(env.DB, item, fetchedAt);
+  const documentId = typeof rec.id === "string" ? rec.id : null;
+  const day = typeof rec.day === "string" ? rec.day : endpointKey === "heartrate" ? dayFromHeartrateDoc(doc) : null;
+  return archiveWearableDocument(env, { source: SOURCE_OURA, endpoint: endpointKey, documentId, day, fetchedAt }, doc, async (rawId, revisionAt) => {
+    for (const item of projectDocument(endpointKey, doc, rawId, revisionAt)) {
+      if (item.kind === "archive_only" || item.kind === "skipped") continue;
+      await applyProjected(env.DB, item);
+      if (item.kind === "sleep_period" && !item.row.is_nap) {
+        await enrichDailyFromPeriod(env.DB, item, revisionAt);
+      }
     }
-  }
-  return "written";
+  });
 }
 
 async function enrichDailyFromPeriod(
@@ -63,29 +41,29 @@ async function enrichDailyFromPeriod(
     .prepare(`SELECT * FROM daily_sleep WHERE day = ? AND source = ? LIMIT 1`)
     .bind(item.row.day, SOURCE_OURA)
     .first<Record<string, unknown>>();
-  if (!existing) return;
+  if (existing?.deleted_at) return;
   const merged = enrichDailySleepFromPeriod(
     {
-      day: String(existing.day),
+      day: item.row.day,
       source: SOURCE_OURA,
-      source_day: (existing.source_day as string) ?? null,
-      score: (existing.score as number) ?? null,
-      total_sleep_s: (existing.total_sleep_s as number) ?? null,
-      time_in_bed_s: (existing.time_in_bed_s as number) ?? null,
-      efficiency: (existing.efficiency as number) ?? null,
-      latency_s: (existing.latency_s as number) ?? null,
-      deep_s: (existing.deep_s as number) ?? null,
-      rem_s: (existing.rem_s as number) ?? null,
-      light_s: (existing.light_s as number) ?? null,
-      awake_s: (existing.awake_s as number) ?? null,
-      avg_hrv: (existing.avg_hrv as number) ?? null,
-      avg_hr: (existing.avg_hr as number) ?? null,
-      lowest_hr: (existing.lowest_hr as number) ?? null,
-      respiratory_rate: (existing.respiratory_rate as number) ?? null,
-      contributors_json: (existing.contributors_json as string) ?? null,
-      raw_id: (existing.raw_id as number) ?? null,
-      deleted_at: (existing.deleted_at as string) ?? null,
-      updated_at: String(existing.updated_at),
+      source_day: (existing?.source_day as string) ?? item.row.source_day,
+      score: (existing?.score as number) ?? null,
+      total_sleep_s: (existing?.total_sleep_s as number) ?? null,
+      time_in_bed_s: (existing?.time_in_bed_s as number) ?? null,
+      efficiency: (existing?.efficiency as number) ?? null,
+      latency_s: (existing?.latency_s as number) ?? null,
+      deep_s: (existing?.deep_s as number) ?? null,
+      rem_s: (existing?.rem_s as number) ?? null,
+      light_s: (existing?.light_s as number) ?? null,
+      awake_s: (existing?.awake_s as number) ?? null,
+      avg_hrv: (existing?.avg_hrv as number) ?? null,
+      avg_hr: (existing?.avg_hr as number) ?? null,
+      lowest_hr: (existing?.lowest_hr as number) ?? null,
+      respiratory_rate: (existing?.respiratory_rate as number) ?? null,
+      contributors_json: (existing?.contributors_json as string) ?? null,
+      raw_id: (existing?.raw_id as number) ?? item.row.raw_id,
+      deleted_at: (existing?.deleted_at as string) ?? null,
+      updated_at: fetchedAt,
     },
     item.row,
   );
@@ -97,8 +75,9 @@ export async function ingestEndpointWindow(
   endpointKey: string,
   window: { start: string; end: string },
   trigger: string,
+  pacing?: OuraPacing,
 ): Promise<IngestTally> {
-  const docs = await listDocuments(env, endpointKey, window);
+  const docs = await listDocuments(env, endpointKey, window, pacing);
   const tally: IngestTally = { written: 0, skipped: 0 };
   for (const doc of docs) {
     const r = await ingestOneDocument(env, endpointKey, doc);

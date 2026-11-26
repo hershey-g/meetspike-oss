@@ -1,7 +1,8 @@
 import { addCalendarDays } from "./time.ts";
 
-/** Longest inclusive span a date-scoped API will aggregate (about one quarter). */
-export const RANGE_MAX_SPAN_DAYS = 92;
+/** Bounds supported by the app's four-digit calendar dates. */
+export const FIRST_CALENDAR_DAY = "0100-01-01";
+const LAST_CALENDAR_DAY = "9999-12-30";
 
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -27,7 +28,7 @@ export function isDateRangeError(r: DateRange | DateRangeError): r is DateRangeE
 
 /** True only for a real calendar date written as YYYY-MM-DD (rejects 2026-02-30). */
 export function isValidDay(day: unknown): day is string {
-  if (typeof day !== "string" || !DAY_RE.test(day)) return false;
+  if (typeof day !== "string" || !DAY_RE.test(day) || day < FIRST_CALENDAR_DAY || day > LAST_CALENDAR_DAY) return false;
   const d = new Date(`${day}T00:00:00.000Z`);
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === day;
 }
@@ -46,6 +47,15 @@ export function daysInRange(start: string, end: string): string[] {
   return out;
 }
 
+/**
+ * Keep ordinary charts continuous. For unusually wide queries, emit the days
+ * with records and the requested endpoints without allocating centuries of empty rows.
+ */
+export function historyDays(start: string, end: string, dataDays: Iterable<string>): string[] {
+  if (spanDays(start, end) <= 3660) return daysInRange(start, end);
+  return [...new Set([start, end, ...dataDays])].filter((day) => day >= start && day <= end).sort();
+}
+
 function present(v: string | null | undefined): v is string {
   return typeof v === "string" && v.trim() !== "";
 }
@@ -54,7 +64,7 @@ function present(v: string | null | undefined): v is string {
 export function validateDateRange(
   start: string,
   end: string,
-  maxSpanDays: number = RANGE_MAX_SPAN_DAYS,
+  maxSpanDays: number = Infinity,
   names: { start: string; end: string } = { start: "start", end: "end" },
 ): DateRange | DateRangeError {
   if (!isValidDay(start)) return { error: `${names.start} must be a valid YYYY-MM-DD date` };
@@ -78,7 +88,7 @@ export function parseDateRange(
   query: DateRangeQuery,
   opts: { today: string; maxSpanDays?: number; defaultSpanDays?: number },
 ): DateRange | DateRangeError {
-  const maxSpanDays = opts.maxSpanDays ?? RANGE_MAX_SPAN_DAYS;
+  const maxSpanDays = opts.maxSpanDays ?? Infinity;
   const start = present(query.start) ? query.start.trim() : null;
   const end = present(query.end) ? query.end.trim() : null;
   const date = present(query.date) ? query.date.trim() : null;
@@ -91,7 +101,7 @@ export function parseDateRange(
     return { start: date, end: date, spanDays: 1 };
   }
   if (start == null && end == null) {
-    const span = Math.max(1, Math.min(maxSpanDays, Math.round(opts.defaultSpanDays ?? 1)));
+    const span = Math.max(1, Math.min(maxSpanDays, spanDays(FIRST_CALENDAR_DAY, opts.today), Math.round(opts.defaultSpanDays ?? 1)));
     return validateDateRange(addCalendarDays(opts.today, -(span - 1)), opts.today, maxSpanDays);
   }
   // A lone bound is a one-day range.

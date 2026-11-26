@@ -1,6 +1,6 @@
 import type { Env } from "../env.ts";
 import { SOURCE_OURA } from "../types.ts";
-import { addCalendarDays } from "./time.ts";
+import { addCalendarDays, calendarDayInZone } from "./time.ts";
 import { getRawJson } from "./r2.ts";
 import {
   attachMeetingHr,
@@ -20,6 +20,11 @@ export type HeartrateRawRow = {
 
 const HR_DOC_DAY = /^hr-(\d{4}-\d{2}-\d{2})/;
 const R2_FETCH_CONCURRENCY = 8;
+const LEGACY_WINDOW_DAYS = 7;
+
+function legacyPage(row: HeartrateRawRow): boolean {
+  return /-p\d+$/.test(row.document_id);
+}
 
 export function rawRowOverlapsDays(row: HeartrateRawRow, fromDay: string, toDay: string): boolean {
   if (row.day && row.day >= fromDay && row.day <= toDay) return true;
@@ -50,7 +55,9 @@ export function filterHeartrateRowsForDays(rows: HeartrateRawRow[], days: string
   if (!keep.size) return [];
   return rows.filter((row) => {
     const day = heartrateRowDay(row);
-    return Boolean(day && keep.has(day));
+    if (!day) return false;
+    if (keep.has(day)) return true;
+    return legacyPage(row) && days.some((meetingDay) => day < meetingDay && addCalendarDays(day, LEGACY_WINDOW_DAYS) >= meetingDay);
   });
 }
 
@@ -75,23 +82,31 @@ export async function listHeartrateRaw(
   fromDay: string,
   toDay: string,
 ): Promise<HeartrateRawRow[]> {
-  const from = addCalendarDays(fromDay, -1);
+  const from = addCalendarDays(fromDay, -LEGACY_WINDOW_DAYS);
   const to = addCalendarDays(toDay, 1);
   const fromDoc = `hr-${from}`;
   const toDoc = `hr-${addCalendarDays(to, 1)}`;
   const res = await db
     .prepare(
       `SELECT r2_key, day, document_id
-       FROM raw_object
+       FROM raw_object AS hr
        WHERE source = ? AND endpoint = 'heartrate'
          AND (
            (day IS NOT NULL AND day >= ? AND day <= ?)
            OR (document_id >= ? AND document_id < ?)
-         )`,
+         )
+         AND (document_id NOT LIKE '%-daily' OR NOT EXISTS (
+           SELECT 1 FROM raw_object AS newer
+           WHERE newer.source = hr.source AND newer.endpoint = hr.endpoint
+             AND newer.document_id = hr.document_id AND newer.id > hr.id
+         ))
+       ORDER BY fetched_at DESC, id DESC`,
     )
     .bind(SOURCE_OURA, from, to, fromDoc, toDoc)
     .all<HeartrateRawRow>();
-  return (res.results ?? []).filter((row) => rawRowOverlapsDays(row, from, to));
+  return (res.results ?? []).filter((row) =>
+    rawRowOverlapsDays(row, legacyPage(row) ? from : addCalendarDays(fromDay, -1), to),
+  );
 }
 
 async function samplesFromRows(env: Env, rows: HeartrateRawRow[]): Promise<HrSample[]> {
@@ -107,7 +122,7 @@ async function samplesFromRows(env: Env, rows: HeartrateRawRow[]): Promise<HrSam
       continue;
     }
     for (const s of parseHeartrateDoc(doc)) {
-      const key = `${s.timestampMs}:${s.bpm}`;
+      const key = `${s.timestampMs}:${s.source}`;
       if (seen.has(key)) continue;
       seen.add(key);
       samples.push(s);
@@ -126,7 +141,7 @@ export async function loadHeartrateSamplesForDays(env: Env, days: string[]): Pro
   const padded = paddedHeartrateDays(days);
   if (!padded.length) return [];
   const rows = filterHeartrateRowsForDays(
-    await listHeartrateRaw(env.DB, padded[0], padded[padded.length - 1]),
+    await listHeartrateRaw(env.DB, addCalendarDays(padded[0], 1), addCalendarDays(padded[padded.length - 1], -1)),
     days,
   );
   return samplesFromRows(env, rows);
@@ -139,7 +154,7 @@ export async function loadMeetingHrMap(
   timeZone = "America/New_York",
 ): Promise<Map<string, MeetingHrStress>> {
   if (!meetings.length) return new Map();
-  const days = [...new Set(meetings.map((m) => m.day))];
+  const days = [...new Set(meetings.flatMap((m) => [m.day, calendarDayInZone(m.endUtc, timeZone)]))];
   const samples = await loadHeartrateSamplesForDays(env, days);
   return attachMeetingHr(meetings, samples, lowestHrByDay, timeZone);
 }

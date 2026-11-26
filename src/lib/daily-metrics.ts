@@ -1,8 +1,7 @@
 import { SOURCE_OURA, type WearableSource } from "../types.ts";
 import { addCalendarDays } from "./time.ts";
 
-export const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
-export const METRICS_MAX_SPAN_DAYS = 90;
+import { historyDays, isValidDay } from "./date-range.ts";
 
 export type SleepMetricIn = {
   day: string;
@@ -63,14 +62,11 @@ export function parseDayRange(
   end: string | undefined,
   today: string,
 ): { start: string; end: string } | { error: string } {
-  if (end != null && end !== "" && !DAY_RE.test(end)) return { error: "end must be YYYY-MM-DD" };
-  if (start != null && start !== "" && !DAY_RE.test(start)) return { error: "start must be YYYY-MM-DD" };
-  const resolvedEnd = end && DAY_RE.test(end) ? end : today;
-  const resolvedStart = start && DAY_RE.test(start) ? start : addCalendarDays(resolvedEnd, -29);
+  if (end != null && end !== "" && !isValidDay(end)) return { error: "end must be YYYY-MM-DD" };
+  if (start != null && start !== "" && !isValidDay(start)) return { error: "start must be YYYY-MM-DD" };
+  const resolvedEnd = end && isValidDay(end) ? end : today;
+  const resolvedStart = start && isValidDay(start) ? start : addCalendarDays(resolvedEnd, -29);
   if (resolvedStart > resolvedEnd) return { error: "start must be on or before end" };
-  if (inclusiveDayCount(resolvedStart, resolvedEnd) > METRICS_MAX_SPAN_DAYS) {
-    return { error: `range cannot exceed ${METRICS_MAX_SPAN_DAYS} days` };
-  }
   return { start: resolvedStart, end: resolvedEnd };
 }
 
@@ -95,7 +91,8 @@ export function mergeDailyMetrics(opts: {
   const stressBy = indexByDay(opts.stress ?? []);
   const strainBy = opts.strain ? indexByDay(opts.strain) : null;
   const out: DailyMetricPoint[] = [];
-  for (let day = opts.start; day <= opts.end; day = addCalendarDays(day, 1)) {
+  const dataDays = [...sleepBy.keys(), ...readyBy.keys(), ...activityBy.keys(), ...stressBy.keys(), ...(strainBy?.keys() ?? [])];
+  for (const day of historyDays(opts.start, opts.end, dataDays)) {
     const s = sleepBy.get(day);
     const r = readyBy.get(day);
     const a = activityBy.get(day);

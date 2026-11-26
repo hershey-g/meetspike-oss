@@ -4,7 +4,7 @@ import { auth } from "../src/routes/auth.ts";
 import { api } from "../src/routes/api.ts";
 import { getValidWhoopAccessToken, getWhoopTokens, putWhoopTokens } from "../src/lib/tokens.ts";
 import { WhoopRateLimitError, listWhoopCollection, resetWhoopRateState, whoopFetch } from "../src/sources/whoop/client.ts";
-import { WHOOP_SCOPES, WHOOP_TOKEN } from "../src/sources/whoop/endpoints.ts";
+import { WHOOP_API, WHOOP_SCOPES, WHOOP_TOKEN } from "../src/sources/whoop/endpoints.ts";
 
 /** In-memory stand-in for the TOKENS KV namespace. */
 function fakeKv() {
@@ -191,7 +191,7 @@ describe("WHOOP client", () => {
     const res = await whoopFetch(env, "/v2/recovery");
     assert.equal(res.status, 200);
     assert.deepEqual(
-      calls.map((c) => c.url.replace("https://api.prod.whoop.com", "")),
+      calls.map((c) => c.url.replace(new URL(WHOOP_API).origin, "")),
       ["/developer/v2/recovery", "/oauth/oauth2/token", "/developer/v2/recovery"],
     );
   });

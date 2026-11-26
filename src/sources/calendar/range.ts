@@ -1,5 +1,5 @@
 import { addCalendarDays, calendarDayInZone } from "../../lib/time.ts";
-import { daysInRange, spanDays } from "../../lib/date-range.ts";
+import { historyDays, spanDays } from "../../lib/date-range.ts";
 import { thinHrSeries, type MeetingHrStress } from "../../lib/heartrate.ts";
 import type { JoinedMeeting } from "./join.ts";
 import {
@@ -28,6 +28,7 @@ export type RangeZoneCounts = {
   watching: number;
   restored: number;
   noHr: number;
+  combinedHr?: number;
 };
 
 export type RangeDay = RangeZoneCounts & {
@@ -77,7 +78,7 @@ export type RangeBriefing = {
     line: string;
   };
   recovery: RangeRecovery;
-  /** One entry per calendar day in the range, ascending, including empty days. */
+  /** Days in ascending order. Extra-wide ranges omit empty days. */
   days: RangeDay[];
 };
 
@@ -133,10 +134,11 @@ export function composeRangeSummary(opts: RangeZoneCounts & {
     if (opts.afterHoursCount) bits.push(`${opts.afterHoursCount} after hours`);
     return `${head}: ${bits.join(", ")}.`;
   }
-  if (opts.elevated + opts.watching + opts.restored === 0) {
+  if (opts.elevated + opts.watching + opts.restored === 0 && !opts.combinedHr) {
     return `${head}. No ring HR in those windows — we will not invent a signal.`;
   }
-  let line = `${head}: ${opts.elevated} elevated, ${opts.watching} worth watching, ${opts.restored} restored.`;
+  const combined = opts.combinedHr ? `, ${opts.combinedHr} with WHOOP + Oura heart rate` : "";
+  let line = `${head}: ${opts.elevated} elevated, ${opts.watching} worth watching, ${opts.restored} restored${combined}.`;
   if (opts.hardest) {
     const title = opts.hardest.title?.trim() || "Untitled meeting";
     line += ` Highest: ${title} on ${formatDay(opts.hardest.day)}.`;
@@ -188,7 +190,10 @@ export function buildRangeBriefing(opts: {
   const readinessScores: number[] = [];
   const strains: number[] = [];
 
-  const days: RangeDay[] = daysInRange(start, end).map((day) => {
+  const dateList = historyDays(start, end, [
+    ...byDay.keys(), ...[...recoveryByDay.keys()].flatMap((day) => [day, addCalendarDays(day, -1)]),
+  ]);
+  const days: RangeDay[] = dateList.map((day) => {
     const meetings = (byDay.get(day) ?? []).sort(
       (a, b) => a.startUtc.localeCompare(b.startUtc) || a.id.localeCompare(b.id),
     );
@@ -199,8 +204,9 @@ export function buildRangeBriefing(opts: {
     let early = 0;
     for (const m of meetings) {
       const bucket = zoneBucket(m.hrStress);
-      if (bucket === "none") counts.noHr += 1;
-      else counts[bucket] += 1;
+      if (bucket !== "none") counts[bucket] += 1;
+      else if (m.hrStress?.coverage === "ok") counts.combinedHr = (counts.combinedHr ?? 0) + 1;
+      else counts.noHr += 1;
       if (bucket !== "none" && m.hrStress?.meanBpm != null) bpm.push(m.hrStress.meanBpm);
       if (bucket === "elevated" || bucket === "watching") {
         const impact = m.hrStress?.impact ?? 0;
@@ -220,6 +226,7 @@ export function buildRangeBriefing(opts: {
     total.watching += counts.watching;
     total.restored += counts.restored;
     total.noHr += counts.noHr;
+    if (counts.combinedHr) total.combinedHr = (total.combinedHr ?? 0) + counts.combinedHr;
     allBpm.push(...bpm);
 
     const morning = recoveryOf(recoveryByDay.get(day));

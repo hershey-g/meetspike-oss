@@ -16,8 +16,15 @@
     <title>Meetspike</title>
     <meta name="description" content="Your meetings next to your recovery, sleep and strain." />
     <link rel="stylesheet" href="/app.css" />
+    <link rel="stylesheet" href="/ask-panel.css" />
     <link rel="modulepreload" href="/app.js" />
     <link rel="modulepreload" href="/range-presets.js" />
+    <link rel="modulepreload" href="/pwa.js" />
+    <link rel="modulepreload" href="/install-gate.js" />
+    <link rel="modulepreload" href="/ptr.js" />
+    <link rel="modulepreload" href="/ptr-logic.js" />
+    <link rel="modulepreload" href="/ask-panel.js" />
+    <link rel="modulepreload" href="/ask-logic.js" />
   </head>
   <body>
     <a class="skip" href="#screen">Skip to content</a>
@@ -29,6 +36,10 @@
       <p class="placeholder">Loading…</p>
     </main>
     <nav class="tabbar" aria-label="Main">
+      <a class="brand" href="#today" data-tab="today" aria-label="Meetspike, today">
+        <svg viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="8" /><path d="M5 15h4l2-5 3 10 3-13 2 8h4" /></svg>
+        <span>Meetspike</span>
+      </a>
       <div class="tabs">
         <a href="#today" data-tab="today">
           <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 9.5 10 4l7 5.5V17H3z" /></svg>Today
@@ -43,8 +54,10 @@
           <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 6h14M3 10h14M3 14h14" /></svg>More<span class="dot" id="more-dot" hidden></span>
         </a>
       </div>
-      <a href="#ask" class="ask-fab" data-tab="ask" aria-label="Ask your data">
+      <a href="#ask" class="ask-fab" data-tab="ask" aria-label="Ask your data" aria-keyshortcuts="Meta+K Control+K">
         <svg viewBox="0 0 26 26" aria-hidden="true"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h13A2.5 2.5 0 0 1 22 6.5v9a2.5 2.5 0 0 1-2.5 2.5H11l-5 4v-4H6.5A2.5 2.5 0 0 1 4 15.5z" /><path d="M9 11h8" /></svg>
+        <svg class="fab-spark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4" /></svg>
+        <span class="fab-label">Ask your data</span><kbd class="fab-kbd">⌘K</kbd>
       </a>
     </nav>
     <div id="sheet" class="sheet" hidden></div>

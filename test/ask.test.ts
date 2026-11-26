@@ -90,7 +90,7 @@ describe("Ask data block", () => {
       title: "Proposal review",
       kind: "client",
       attendees_json: JSON.stringify([
-        { email: "me@x.example", self: true },
+        { email: "me@x.com", self: true },
         { email: "sam@client.example", displayName: "Sam Okafor" },
       ]),
     },

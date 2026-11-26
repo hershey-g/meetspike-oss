@@ -1,0 +1,21 @@
+{
+  "ok": true,
+  "companies": [
+    {
+      "domain": "northwind.example",
+      "name": "Northwind"
+    },
+    {
+      "domain": "globex.example",
+      "name": "Globex"
+    },
+    {
+      "domain": "initech.example",
+      "name": "Initech"
+    },
+    {
+      "domain": "umbrella-health.example",
+      "name": "Umbrella Health"
+    }
+  ]
+}

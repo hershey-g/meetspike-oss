@@ -34,7 +34,7 @@ There is no per-minute Oura daytime-stress series in this repo. In-meeting “st
 | Oura morning D+1 | `daily_sleep` / `daily_readiness` where `day = D+1`. That is the night after the work day. |
 | Prior night of briefing D | Oura `day = D` (woke that morning, before the work day). |
 | After-hours | Event start ≥ 18:00 local. |
-| Early start | Event start < 08:00 local (sleep-impact heuristic). |
+| Early start | Event start < 08:00 local (sleep-impact heuristic; not in the original PLAN kinds list). |
 | Same-day stress | `daily_stress` where `day = D`. This is **not** HR during the meeting window. |
 | Intra-meeting HR | R2 heartrate samples overlapping the meeting window. Dashboard proxy only — not Oura daytime stress. Missing coverage is reported, not invented. |
 | Stress proxy | If `daily_stress` has no row, invert same-day readiness score + `hrv_balance` contributor. Flag `stress_proxy`. Not an Oura stress document. |

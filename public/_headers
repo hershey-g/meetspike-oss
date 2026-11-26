@@ -29,13 +29,51 @@
 /setup.css
   Cache-Control: no-cache
 
+/qrcode.js
+  Cache-Control: no-cache
+
 /app.js
   Cache-Control: no-cache
 
 /app.css
   Cache-Control: no-cache
 
+/live-hr.js
+  Cache-Control: no-cache
+
 /range-presets.js
+  Cache-Control: no-cache
+
+/people-ui.js
+  Cache-Control: no-cache
+
+/meeting-actions.js
+  Cache-Control: no-cache
+
+/pwa.js
+  Cache-Control: no-cache
+
+/install-gate.js
+  Cache-Control: no-cache
+
+/ptr.js
+  Cache-Control: no-cache
+
+/ptr-logic.js
+  Cache-Control: no-cache
+
+/ask-panel.js
+  Cache-Control: no-cache
+
+/ask-logic.js
+  Cache-Control: no-cache
+
+/ask-panel.css
+  Cache-Control: no-cache
+
+# The service worker itself. Browsers cap its HTTP cache at 24 hours anyway;
+# no-cache makes every update check reach the server.
+/sw.js
   Cache-Control: no-cache
 
 /manifest.webmanifest

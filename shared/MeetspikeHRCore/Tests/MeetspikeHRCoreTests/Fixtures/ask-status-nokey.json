@@ -1,0 +1,12 @@
+{
+  "ok": true,
+  "available": true,
+  "connected": false,
+  "tail": null,
+  "savedAt": null,
+  "model": "claude-opus-5-5",
+  "sourceDisplay": {
+    "oura": true,
+    "whoop": true
+  }
+}

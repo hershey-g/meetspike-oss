@@ -10,7 +10,14 @@ import {
   GOOGLE_TOKEN,
 } from "../sources/calendar/endpoints.ts";
 import { codeChallengeS256, newCodeVerifier, newState } from "../lib/pkce.ts";
-import { putGoogleTokens, putOuraTokens } from "../lib/tokens.ts";
+import { getGoogleAccountTokens, putOuraTokens } from "../lib/tokens.ts";
+import { fetchAccountEmail } from "../sources/calendar/client.ts";
+import { connectAccount, migrateLegacyGoogleTokens, refreshCalendarList } from "../sources/calendar/accounts.ts";
+import { syncCalendarIncremental } from "../sources/calendar/ingest.ts";
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch] as string);
+}
 
 export const auth = new Hono<{ Bindings: Env }>();
 
@@ -133,7 +140,10 @@ auth.get("/google/start", async (c) => {
   url.searchParams.set("code_challenge", challenge);
   url.searchParams.set("code_challenge_method", "S256");
   url.searchParams.set("access_type", "offline");
-  url.searchParams.set("prompt", "consent");
+  // select_account: Google always asks which account, so "Connect another
+  // Google account" can pick a second one. consent: Google returns a refresh
+  // token every time, including for an account connected before.
+  url.searchParams.set("prompt", "select_account consent");
   return c.redirect(url.toString());
 });
 
@@ -173,17 +183,39 @@ auth.get("/google/callback", async (c) => {
     expires_in?: number;
     scope?: string;
   };
-  await putGoogleTokens(c.env, {
+  const bundle = {
     access_token: json.access_token,
     refresh_token: json.refresh_token,
     expires_at: new Date(Date.now() + (json.expires_in ?? 3600) * 1000).toISOString(),
     scope: json.scope,
-  });
+  };
+  let email: string;
+  try {
+    // Move the single-account token first, so an older connection is not lost.
+    await migrateLegacyGoogleTokens(c.env).catch(() => null);
+    email = await fetchAccountEmail(bundle.access_token);
+    const previous = await getGoogleAccountTokens(c.env, email);
+    if (!bundle.refresh_token && previous?.refresh_token) bundle.refresh_token = previous.refresh_token;
+    email = await connectAccount(c.env, email, bundle);
+  } catch (e) {
+    return c.text(`google account lookup failed: ${e instanceof Error ? e.message : String(e)}`, 502);
+  }
+  // Read its calendar list and sync it in the background; the page answers now.
+  const work = refreshCalendarList(c.env, email)
+    .then(() => syncCalendarIncremental(c.env, "google-connect"))
+    .catch(() => undefined);
+  try {
+    c.executionCtx.waitUntil(work);
+  } catch {
+    await work; // no execution context (tests): finish before answering
+  }
   return c.html(
     `<!doctype html><meta charset="utf-8"><title>Google Calendar connected</title>
+     <meta name="viewport" content="width=device-width, initial-scale=1">
      <body style="font-family:system-ui;background:#0c1014;color:#e8ece8;padding:2rem">
-     <h1>Google token stored</h1>
-     <p>KV key <code>google:tokens</code> written (calendar.readonly). You can close this tab.</p>
-     <p><a style="color:#9fd3c7" href="/setup">Back to setup</a></p></body>`,
+     <h1>Google account connected</h1>
+     <p>${escapeHtml(email)} is connected (calendar.readonly). Its main calendar counts as meetings.
+     Pick more calendars on the setup page.</p>
+     <p><a style="color:#9fd3c7" href="/setup#calendars">Choose calendars</a></p></body>`,
   );
 });
